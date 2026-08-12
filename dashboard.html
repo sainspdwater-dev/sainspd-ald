@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Active Leakage Detection PD - Dashboard</title>
+  
+  <!-- Tailwind CSS & Google Fonts -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Chart.js & Chart.js Datalabels Plugin -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+  
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <!-- Leaflet MarkerCluster CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+  <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+  
+  <!-- DataTables CSS & JS -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#0056D2',
+            secondary: '#2E7DFF',
+            darkblue: '#0F172A',
+            surface: '#F5F7FA',
+            success: '#2E7D32',
+            danger: '#D32F2F',
+            warning: '#ED6C02'
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background-color: #F5F7FA; font-family: 'Inter', sans-serif; }
+    .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); border: 1px solid rgba(226, 232, 240, 0.8); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); }
+    .nav-btn { transition: all 0.2s ease; }
+    .nav-btn.active { background: #0056D2; color: white; box-shadow: 0 4px 12px rgba(0, 86, 210, 0.3); }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
+    .animate-pulse-custom { animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+    .tooltip-wrap { position: relative; display: inline-block; }
+    .tooltip-wrap .tooltip-text {
+      visibility: hidden; width: 90px; background-color: #0F172A; color: #fff; text-align: center;
+      border-radius: 6px; padding: 4px 0; position: absolute; z-index: 50; bottom: 125%; left: 50%;
+      transform: translateX(-50%); opacity: 0; transition: opacity 0.2s; font-size: 10px; font-weight: 500;
+    }
+    .tooltip-wrap:hover .tooltip-text { visibility: visible; opacity: 1; }
+  </style>
+</head>
+<body class="flex flex-col h-screen overflow-hidden text-slate-800">
+
+  <!-- LOADING OVERLAY -->
+  <div id="loadingOverlay" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex flex-col items-center justify-center transition-opacity duration-300">
+    <div class="bg-white p-6 rounded-2xl shadow-2xl flex items-center space-x-4">
+      <div class="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      <div>
+        <h3 class="font-bold text-slate-900">LOADING...</h3>
+        <p class="text-xs text-slate-500">Akan dibuka</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOP NAVIGATION BAR -->
+  <header class="bg-darkblue text-white shadow-md px-6 py-3.5 flex flex-wrap items-center justify-between z-20 flex-shrink-0">
+    <div class="flex items-center space-x-3">
+      <div class="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-white font-bold shadow-lg shadow-primary/40">
+        <i class="fa-solid fa-droplet"></i>
+      </div>
+      <div>
+        <h1 class="font-bold text-sm tracking-wide">ACTIVE LEAKAGE DETECTION PD</h1>
+        <p class="text-[10px] text-slate-400">Dashboard ALD &bull; SAINS PORT DICKSON</p>
+      </div>
+    </div>
+
+    <nav class="flex items-center space-x-2 my-2 sm:my-0">
+      <button onclick="switchTab('rumusan')" id="nav-rumusan" class="nav-btn active px-4 py-2 rounded-xl font-medium text-xs flex items-center space-x-2 transition">
+        <i class="fa-solid fa-chart-pie"></i>
+        <span>Rumusan</span>
+      </button>
+      <button onclick="switchTab('kemaskini')" id="nav-kemaskini" class="nav-btn px-4 py-2 rounded-xl font-medium text-xs flex items-center space-x-2 transition bg-slate-800/80 text-slate-300 hover:bg-slate-700">
+        <i class="fa-solid fa-pen-to-square"></i>
+        <span>Kemaskini Rekod</span>
+      </button>
+      <button onclick="logout()" id="nav-logout" class="nav-btn px-4 py-2 rounded-xl font-medium text-xs flex items-center space-x-2 transition bg-red-900/50 text-red-300 hover:bg-red-800 ml-2">
+        <i class="fa-solid fa-right-from-bracket"></i>
+        <span>Log Keluar</span>
+      </button>
+    </nav>
+
+    <div class="flex items-center space-x-3">
+      <div id="lockBadge" class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">
+        Status Kunci: Memeriksa...
+      </div>
+      <button onclick="refreshData()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition flex items-center space-x-2">
+        <i class="fa-solid fa-rotate"></i>
+        <span class="hidden sm:inline">Muat Semula</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT AREA -->
+  <main class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+
+    <!-- TAB 1: RUMUSAN -->
+    <div id="tab-rumusan" class="space-y-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="glass-card p-5 rounded-2xl border-l-4 border-primary">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs font-medium text-slate-500">Jumlah Rekod</p>
+              <h3 id="kpi-total" class="text-2xl font-bold text-slate-800 mt-1">0</h3>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-blue-50 text-primary flex items-center justify-center text-xl shadow-inner">
+              <i class="fa-solid fa-database"></i>
+            </div>
+          </div>
+        </div>
+        <div class="glass-card p-5 rounded-2xl border-l-4 border-success">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs font-medium text-slate-500">Bulan Terpilih / Aktif</p>
+              <h3 id="kpi-bulan" class="text-2xl font-bold text-slate-800 mt-1">-</h3>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-green-50 text-success flex items-center justify-center text-xl shadow-inner">
+              <i class="fa-solid fa-calendar-days"></i>
+            </div>
+          </div>
+        </div>
+        <div class="glass-card p-5 rounded-2xl border-l-4 border-warning">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs font-medium text-slate-500">Zon Teraktif</p>
+              <h3 id="kpi-zon" class="text-lg font-bold text-slate-800 mt-1 truncate max-w-[150px]">-</h3>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-orange-50 text-warning flex items-center justify-center text-xl shadow-inner">
+              <i class="fa-solid fa-location-crosshairs"></i>
+            </div>
+          </div>
+        </div>
+        <div class="glass-card p-5 rounded-2xl border-l-4 border-secondary">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs font-medium text-slate-500">Jenis Pengesanan Utama</p>
+              <h3 id="kpi-pengesanan" class="text-base font-bold text-slate-800 mt-1 truncate max-w-[150px]">-</h3>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-indigo-50 text-secondary flex items-center justify-center text-xl shadow-inner">
+              <i class="fa-solid fa-magnifying-glass-chart"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass-card p-4 rounded-2xl flex flex-wrap gap-3 items-center justify-between">
+        <div class="flex flex-wrap gap-3 items-center flex-1">
+          <div class="relative flex-1 min-w-[200px]">
+            <i class="fa-solid fa-search absolute left-3.5 top-3 text-slate-400 text-sm"></i>
+            <input type="text" id="filter-search" onkeyup="debouncedSearch()" placeholder="Carian pantas semua kolum..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+          </div>
+          <select id="filter-zon" onchange="applyFilters()" class="py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20">
+            <option value="">Semua Zon</option>
+          </select>
+          <select id="filter-bulan" onchange="applyFilters()" class="py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20">
+            <option value="">Semua Bulan</option>
+          </select>
+          <select id="filter-paip" onchange="applyFilters()" class="py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20">
+            <option value="">Semua Jenis Paip</option>
+          </select>
+          <select id="filter-lapor" onchange="applyFilters()" class="py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20">
+            <option value="">Semua Dilaporkan Oleh</option>
+          </select>
+          <select id="filter-pengesanan" onchange="applyFilters()" class="py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20">
+            <option value="">Semua Jenis Pengesanan</option>
+          </select>
+        </div>
+        <div>
+          <button onclick="resetFilters()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold rounded-xl transition">
+            Reset Filter
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="glass-card p-5 rounded-2xl">
+          <h4 class="font-bold text-sm text-slate-800 mb-4 flex items-center justify-between">
+            <span>Bilangan Mengikut Bulan</span>
+            <span class="text-xs text-slate-400 font-normal"></span>
+          </h4>
+          <div class="relative h-64"><canvas id="chartBulan"></canvas></div>
+        </div>
+        <div class="glass-card p-5 rounded-2xl">
+          <h4 class="font-bold text-sm text-slate-800 mb-4 flex items-center justify-between">
+            <span>Jenis Pengesanan</span>
+            <span class="text-xs text-slate-400 font-normal"></span>
+          </h4>
+          <div class="relative h-64 flex justify-center"><canvas id="chartPengesanan"></canvas></div>
+        </div>
+        <div class="glass-card p-5 rounded-2xl">
+          <h4 class="font-bold text-sm text-slate-800 mb-4 flex items-center justify-between">
+            <span>Taburan Jenis Paip</span>
+            <span class="text-xs text-slate-400 font-normal"></span>
+          </h4>
+          <div class="relative h-64"><canvas id="chartPaip"></canvas></div>
+        </div>
+        <div class="glass-card p-5 rounded-2xl">
+          <h4 class="font-bold text-sm text-slate-800 mb-4 flex items-center justify-between">
+            <span>Dilaporkan Oleh</span>
+            <span class="text-xs text-slate-400 font-normal"></span>
+          </h4>
+          <div class="relative h-64 flex justify-center"><canvas id="chartLapor"></canvas></div>
+        </div>
+      </div>
+
+      <div class="glass-card p-5 rounded-2xl">
+        <h4 class="font-bold text-sm text-slate-800 mb-4">Taburan Mengikut Zon</h4>
+        <div class="relative h-72"><canvas id="chartZon"></canvas></div>
+      </div>
+
+      <div class="glass-card p-5 rounded-2xl">
+        <h4 class="font-bold text-sm text-slate-800 mb-4">Peta Lokasi Kebocoran</h4>
+        <div id="mapContainer" class="w-full h-96 rounded-xl z-0"></div>
+      </div>
+
+      <div class="glass-card p-5 rounded-2xl overflow-hidden">
+        <h4 class="font-bold text-sm text-slate-800 mb-4">Senarai Aduan Terperinci (Kolum B - O)</h4>
+        <div class="overflow-x-auto">
+          <table id="dataTableRumusan" class="w-full text-xs text-left text-slate-700 stripe hover">
+            <thead class="bg-slate-100 text-slate-700 uppercase font-semibold">
+              <tr>
+                <th class="p-3">Tarikh</th>
+                <th class="p-3">No Aduan</th>
+                <th class="p-3">DMA/DMZ</th>
+                <th class="p-3">Alamat</th>
+                <th class="p-3">Koordinat</th>
+                <th class="p-3">Maklumat Kerosakan</th>
+                <th class="p-3">Maklumat Kebocoran</th>
+                <th class="p-3">Jenis Paip</th>
+                <th class="p-3">Saiz Paip</th>
+                <th class="p-3">Dilaporkan Oleh</th>
+                <th class="p-3">Jenis Pengesanan</th>
+                <th class="p-3">Zon</th>
+                <th class="p-3">Bulan</th>
+                <th class="p-3">Unique No</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: KEMASKINI REKOD -->
+    <div id="tab-kemaskini" class="space-y-6 hidden">
+      <div class="glass-card p-5 rounded-2xl space-y-4">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+          <div>
+            <h3 class="font-bold text-slate-800 text-base">laporan & Kemaskini Rekod ALD</h3>
+            <p class="text-xs text-slate-500">Gunakan filter di bawah untuk carian pantas atau klik ikon pensel untuk mengedit rekod.</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button onclick="toggleGroupColumns('group1', this)" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition border border-slate-200">
+              <i class="fa-solid fa-plus mr-1"></i> Koordinat
+            </button>
+            <button onclick="toggleGroupColumns('group2', this)" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition border border-slate-200">
+              <i class="fa-solid fa-plus mr-1"></i> Maklumat Tambahan
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 items-center bg-slate-50 p-4 rounded-xl border border-slate-200">
+          <div>
+            <label class="block text-[10px] font-semibold text-slate-500 mb-1">Tarikh</label>
+            <input type="text" id="k-tarikh" onkeyup="applyKemaskiniFilters()" onchange="applyKemaskiniFilters()" placeholder="Cari Tarikh..." class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-primary/20">
+          </div>
+          <div>
+            <label class="block text-[10px] font-semibold text-slate-500 mb-1">Bulan</label>
+            <select id="k-bulan" onchange="applyKemaskiniFilters()" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-primary/20">
+              <option value="">Semua Bulan</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-semibold text-slate-500 mb-1">Zon</label>
+            <select id="k-zon" onchange="applyKemaskiniFilters()" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-primary/20">
+              <option value="">Semua Zon</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-semibold text-slate-500 mb-1">DMA/DMZ</label>
+            <select id="k-dma" onchange="applyKemaskiniFilters()" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-primary/20">
+              <option value="">Semua DMA/DMZ</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-semibold text-slate-500 mb-1">Jenis Pengesanan</label>
+            <select id="k-pengesanan" onchange="applyKemaskiniFilters()" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-primary/20">
+              <option value="">Semua Pengesanan</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-semibold text-slate-500 mb-1">Dilaporkan Oleh</label>
+            <select id="k-lapor" onchange="applyKemaskiniFilters()" class="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-primary/20">
+              <option value="">Semua Pelapor</option>
+            </select>
+          </div>
+          <div class="flex items-end space-x-2">
+            <button onclick="resetKemaskiniFilters()" class="w-full py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold rounded-lg transition">
+              Reset
+            </button>
+          </div>
+        </div>
+
+        <div class="relative">
+          <i class="fa-solid fa-search absolute left-3.5 top-3 text-slate-400 text-sm"></i>
+          <input type="text" id="k-search" onkeyup="applyKemaskiniFilters()" placeholder="Taip apa sahaja..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20">
+        </div>
+
+        <!-- JADUAL KEMASKINI DENGAN KOLUM UNIQUE NO DI SEBELAH KIRI NO ADUAN -->
+        <div class="overflow-x-auto">
+          <table id="dataTableKemaskini" class="w-full text-xs text-left text-slate-700 stripe hover">
+            <thead class="bg-slate-100 text-slate-700 uppercase font-semibold">
+              <tr>
+                <th class="p-3 whitespace-normal min-w-[90px]">Tarikh</th>  <!-- Col B -->
+                <th class="p-3">Unique No</th>                     <!-- Col O -->
+                <th class="p-3">No Aduan</th>                      <!-- Col C -->
+                <th class="p-3">DMA/DMZ</th>                     <!-- Col D -->
+                <th class="p-3">Alamat</th>                        <!-- Col E -->
+                <th class="p-3 group1-col hidden">Koordinat</th>     <!-- Col F -->
+                <th class="p-3 group2-col hidden">Maklumat Kerosakan</th><!-- Col G -->
+                <th class="p-3">Maklumat Kebocoran</th>            <!-- Col H -->
+                <th class="p-3">Jenis Paip</th>                    <!-- Col I -->
+                <th class="p-3">Saiz Paip</th>                     <!-- Col J -->
+                <th class="p-3">Dilaporkan Oleh</th>               <!-- Col K -->
+                <th class="p-3 group2-col hidden">Jenis Pengesanan</th><!-- Col L -->
+                <th class="p-3">Zon</th>                           <!-- Col M -->
+                <th class="p-3 text-center">Tindakan</th>          <!-- Tindakan -->
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MODAL KEMASKINI REKOD -->
+  <div id="editModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+      
+      <!-- Modal Header -->
+      <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+        <div>
+          <h3 class="font-bold text-slate-800 text-base">Kemaskini Rekod Aduan</h3>
+          <p class="text-xs text-slate-500" id="modalUniqueNoText">Unique No: -</p>
+        </div>
+        <button onclick="closeEditModal()" class="w-8 h-8 rounded-full hover:bg-slate-200 flex items-center justify-center text-slate-500 transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 overflow-y-auto space-y-4 flex-1 text-xs">
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          
+          <!-- 1. Tarikh (Column B) -->
+          <div>
+            <label class="block font-bold text-slate-700 text-xs mb-1.5">Tarikh</label>
+            <input type="text" id="edit-tarikh" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs">
+          </div>
+
+          <!-- 2. Unique No (Column O) -->
+          <div>
+            <label class="block font-bold text-slate-700 text-xs mb-1.5">Unique No</label>
+            <input type="text" id="edit-uniqueNo" readonly class="w-full p-2.5 bg-slate-100 border border-slate-200 rounded-xl text-slate-500 text-xs cursor-not-allowed">
+          </div>
+
+          <!-- 3. No Aduan (Column C) -->
+          <div>
+            <label class="block font-bold text-slate-700 text-xs mb-1.5">No Aduan</label>
+            <input type="text" id="edit-noAduan" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs">
+          </div>
+
+          <!-- 4. DMA / DMZ (Column D) -->
+          <div>
+            <label class="block font-bold text-slate-700 text-xs mb-1.5">DMA / DMZ</label>
+            <input type="text" id="edit-dmaDmz" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs">
+          </div>
+
+          <!-- 5. Alamat (Column E) -->
+          <div class="sm:col-span-2">
+            <label class="block font-bold text-slate-700 text-xs mb-1.5">Alamat</label>
+            <textarea id="edit-alamat" rows="2" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs"></textarea>
+          </div>
+
+          <!-- 6. Maklumat Kebocoran / Pecah (Column H) -->
+          <div>
+            <label class="block font-bold text-slate-700 text-xs mb-1.5">Maklumat Kebocoran / Pecah</label>
+            <input type="text" id="edit-maklumatKebocoran" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs">
+          </div>
+
+          <!-- 7. Jenis Paip (Column I) -->
+          <div>
+            <label class="block font-bold text-slate-700 text-xs mb-1.5">Jenis Paip</label>
+            <input type="text" id="edit-jenisPaip" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs">
+          </div>
+
+          <!-- 8. Saiz Paip (Column J) -->
+          <div>
+            <label class="block font-bold text-slate-700 text-xs mb-1.5">Saiz Paip</label>
+            <input type="text" id="edit-saizPaip" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs">
+          </div>
+
+          <!-- 9. Dilaporkan Oleh (Column K) -->
+          <div>
+            <label class="block font-bold text-slate-700 text-xs mb-1.5">Dilaporkan Oleh</label>
+            <input type="text" id="edit-dilaporkanOleh" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs">
+          </div>
+
+        </div>
+
+        <!-- Hidden Elements -->
+        <div class="hidden">
+          <input type="text" id="edit-kordinat">
+          <input type="text" id="edit-maklumatKerosakan">
+          <input type="text" id="edit-jenisPengesanan">
+          <input type="text" id="edit-zon">
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-end space-x-3">
+        <button onclick="closeEditModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-xl transition">Batal</button>
+        <button onclick="confirmUpdate()" class="px-5 py-2 bg-primary hover:bg-blue-700 text-white font-semibold rounded-xl transition shadow-lg shadow-primary/30">Kemaskini</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- CUSTOM CONFIRMATION MODAL -->
+  <div id="customConfirmModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4" style="z-index: 99999;">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center space-y-4 animate-in fade-in zoom-in duration-200">
+      <div class="w-12 h-12 rounded-full bg-blue-50 text-primary flex items-center justify-center mx-auto text-xl">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <div>
+        <h4 class="font-bold text-slate-800 text-base">Pengesahan</h4>
+        <p class="text-xs text-slate-500 mt-1">Anda pasti ingin mengemaskini maklumat ini?</p>
+      </div>
+      <div class="flex space-x-3 pt-2">
+        <button onclick="closeCustomConfirm(false)" class="flex-1 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-xs rounded-xl transition">Batal</button>
+        <button onclick="closeCustomConfirm(true)" class="flex-1 py-2 bg-primary hover:bg-blue-700 text-white font-semibold text-xs rounded-xl transition shadow-lg shadow-primary/30">Ya, Teruskan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 flex items-center space-x-3 px-5 py-3 rounded-2xl shadow-xl text-white font-medium text-xs">
+    <i id="toastIcon" class="fa-solid fa-circle-check text-base"></i>
+    <span id="toastMessage">Mesej Notifikasi</span>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    // PERLINDUNGAN SESI - Halang akses jika belum log masuk
+    if (!sessionStorage.getItem('pd_water_auth_token')) {
+        window.location.href = './index.html';
+    }
+
+    // KONFIGURASI API
+    const CF_WORKER_URL = 'https://ald-gateway.sainspdwater.workers.dev';
+    const SECRET_CODE = '2366211_URL';
+
+    let globalData = [];
+    let filteredData = [];
+    let isLockEdit = 'TIDAK';
+    let mapInstance = null;
+    let markerClusterGroup = null;
+    
+    const chartsCache = {};
+    let dtRumusan = null;
+    let dtKemaskini = null;
+
+    const bulanOrder = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ogo", "Sep", "Okt", "Nov", "Dis"];
+    const CHART_COLORS = ['#0056D2', '#2E7DFF', '#2E7D32', '#ED6C02', '#8B5CF6', '#EC4899', '#06B6D4', '#10B981', '#F59E0B', '#3B82F6'];
+
+    $(document).ready(function() {
+      initEmptyComponents();
+      loadData();
+    });
+
+    // Fungsi Log Keluar
+    function logout() {
+      sessionStorage.removeItem('pd_water_auth_token');
+      window.location.href = './index.html';
+    }
+
+    // Parser koordinat yang diselaraskan untuk mengabaikan nilai kosong/tidak sah tanpa menghentikan proses
+    function parseCoordinates(str) {
+      if (str === null || str === undefined) {
+        return { coords: null, reason: 'Nilai adalah null atau undefined' };
+      }
+      
+      const trimmed = String(str).trim();
+      
+      // Senarai nilai yang perlu diabaikan
+      const invalidValues = ['-', 'tiada', 'n/a', '#n/a', 'kosong', '""', ''];
+      if (invalidValues.includes(trimmed.toLowerCase())) {
+        return { coords: null, reason: `Nilai diabaikan kerana bernilai kosong / "${trimmed}"` };
+      }
+
+      // Pastikan format mengandungi pemisah koma (latitude,longitude)
+      if (!trimmed.includes(',')) {
+        return { coords: null, reason: `Format salah (tiada pemisah koma: "${trimmed}")` };
+      }
+
+      const parts = trimmed.split(',');
+      if (parts.length < 2) {
+        return { coords: null, reason: `Format salah (bahagian koordinat kurang daripada 2: "${trimmed}")` };
+      }
+
+      const lat = parseFloat(parts[0].trim());
+      const lng = parseFloat(parts[1].trim());
+
+      // Semak sama ada hasil parse adalah nombor sah
+      if (isNaN(lat) || isNaN(lng)) {
+        return { coords: null, reason: `Gagal diparse kepada nombor (lat: ${parts[0]}, lng: ${parts[1]})` };
+      }
+
+      // Abaikan jika koordinat 0,0
+      if (lat === 0 && lng === 0) {
+        return { coords: null, reason: 'Koordinat bernilai 0,0 (tidak sah)' };
+      }
+
+      // Semak julat geografi sah (Latitud: -90 hingga 90, Longitud: -180 hingga 180)
+      if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+        return { coords: null, reason: `Di luar julat geografi sah (lat: ${lat}, lng: ${lng})` };
+      }
+
+      return { coords: [lat, lng], reason: null };
+    }
+
+    function initEmptyComponents() {
+      chartsCache['chartBulan'] = createChartInstance('chartBulan', 'bar', false);
+      chartsCache['chartPengesanan'] = createChartInstance('chartPengesanan', 'pie', false);
+      chartsCache['chartPaip'] = createChartInstance('chartPaip', 'bar', false);
+      chartsCache['chartLapor'] = createChartInstance('chartLapor', 'doughnut', false);
+      chartsCache['chartZon'] = createChartInstance('chartZon', 'bar', true);
+
+      dtRumusan = $('#dataTableRumusan').DataTable({
+        pageLength: 10,
+        responsive: true,
+        deferRender: true,
+        data: [],
+        columns: [
+          { data: 'tarikh' },
+          { data: 'noAduan', className: 'font-semibold' },
+          { data: 'dmaDmz' },
+          { data: 'alamat' },
+          { data: 'kordinat' },
+          { data: 'maklumatKerosakan' },
+          { data: 'maklumatKebocoran' },
+          { data: 'jenisPaip' },
+          { data: 'saizPaip' },
+          { data: 'dilaporkanOleh' },
+          { data: 'jenisPengesanan' },
+          { data: 'zon' },
+          { data: 'bulan' },
+          { data: 'uniqueNo' }
+        ]
+      });
+
+      dtKemaskini = $('#dataTableKemaskini').DataTable({
+        pageLength: 10,
+        responsive: true,
+        deferRender: true,
+        data: [],
+        columns: [
+          { data: 'tarikh', className: 'whitespace-normal' }, // Col B
+          { data: 'uniqueNo', className: 'font-mono text-[11px] text-slate-500 font-medium' }, // Col O
+          { data: 'noAduan', className: 'font-semibold' },   // Col C
+          { data: 'dmaDmz' },                                // Col D
+          { data: 'alamat' },                                // Col E
+          { data: 'kordinat', visible: false },              // Col F
+          { data: 'maklumatKerosakan', visible: false },     // Col G
+          { data: 'maklumatKebocoran' },                     // Col H
+          { data: 'jenisPaip' },                             // Col I
+          { data: 'saizPaip' },                              // Col J
+          { data: 'dilaporkanOleh' },                        // Col K
+          { data: 'jenisPengesanan', visible: false },       // Col L
+          { data: 'zon' },                                   // Col M
+          {
+            data: null,
+            className: 'text-center space-x-2',
+            render: function (data, type, row) {
+              const editBtn = `
+                <div class="tooltip-wrap">
+                  <button onclick="openEditModal('${escapeHtml(row.uniqueNo)}')" class="p-2.5 bg-blue-50 text-primary hover:bg-blue-100 rounded-xl transition shadow-sm hover:scale-105">
+                    <i class="fa-solid fa-pencil text-sm"></i>
+                  </button>
+                  <span class="tooltip-text">Edit Rekod</span>
+                </div>`;
+              let mapBtn = '';
+              const parsed = parseCoordinates(row.kordinat);
+              if (parsed.coords) {
+                mapBtn = `
+                  <div class="tooltip-wrap">
+                    <a href="https://www.google.com/maps?q=${parsed.coords[0]},${parsed.coords[1]}" target="_blank" class="p-2.5 bg-emerald-50 text-success hover:bg-emerald-100 rounded-xl transition shadow-sm hover:scale-105 inline-block">
+                      <i class="fa-solid fa-location-dot text-sm"></i>
+                    </a>
+                    <span class="tooltip-text">Buka Peta</span>
+                  </div>`;
+              }
+              return editBtn + mapBtn;
+            }
+          }
+        ]
+      });
+
+      mapInstance = L.map('mapContainer', { preferCanvas: true }).setView([2.7258, 101.9424], 12);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap'
+      }).addTo(mapInstance);
+      
+      markerClusterGroup = L.markerClusterGroup({ disableClusteringAtZoom: 16 });
+      mapInstance.addLayer(markerClusterGroup);
+    }
+
+    async function loadData() {
+      showLoading(true);
+      try {
+        const response = await fetch(CF_WORKER_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Secret-Code': SECRET_CODE
+          },
+          body: JSON.stringify({ action: 'getData' })
+        });
+        
+        const result = await response.json();
+        handleDataLoaded(result);
+      } catch (error) {
+        handleDataError(error);
+      }
+    }
+
+    function handleDataLoaded(response) {
+      if (!response.success) {
+        showLoading(false);
+        showToast('Ralat: ' + response.message, 'danger');
+        return;
+      }
+
+      isLockEdit = response.lockEdit;
+      updateLockBadgeUI();
+
+      const rawData = response.data;
+      globalData = [];
+      
+      // Pemetaan indeks berdasarkan data Code.gs (B hingga O: Indeks 0 hingga 13)
+      for (let i = 0; i < rawData.length; i++) {
+        const r = rawData[i];
+        const uniqueNo = r[13]; // Kolum O
+        if (uniqueNo) {
+          globalData.push({
+            tarikh: r[0] || '-',                // Col B
+            noAduan: r[1] || '-',               // Col C
+            dmaDmz: r[2] || '-',                // Col D
+            alamat: r[3] || '-',                // Col E
+            kordinat: r[4] || '',               // Col F (Indeks 4)
+            maklumatKerosakan: r[5] || '-',     // Col G
+            maklumatKebocoran: r[6] || '-',     // Col H
+            jenisPaip: r[7] || '-',             // Col I
+            saizPaip: r[8] || '-',              // Col J
+            dilaporkanOleh: r[9] || '-',        // Col K
+            jenisPengesanan: r[10] || '-',      // Col L
+            zon: r[11] || '-',                  // Col M
+            bulan: r[12] || '-',                // Col N
+            uniqueNo: r[13]                     // Col O
+          });
+        }
+      }
+
+      filteredData = [...globalData];
+      populateFilters();
+      applyFilters();
+      showLoading(false);
+
+      setTimeout(() => {
+        if (mapInstance) mapInstance.invalidateSize();
+      }, 200);
+    }
+
+    function handleDataError(error) {
+      showLoading(false);
+      showToast('Gagal memuatkan data: ' + error.message, 'danger');
+    }
+
+    function escapeHtml(unsafe) {
+      return (unsafe || "").toString()
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    function updateLockBadgeUI() {
+      const badge = document.getElementById('lockBadge');
+      if (isLockEdit === 'YA') {
+        badge.className = 'px-3 py-1 rounded-full text-xs font-semibold bg-red-900/50 text-red-300 border border-red-700';
+        badge.innerHTML = '<i class="fa-solid fa-lock mr-1"></i> Status Kunci: YA (Edit Terhad)';
+      } else {
+        badge.className = 'px-3 py-1 rounded-full text-xs font-semibold bg-emerald-900/50 text-emerald-300 border border-emerald-700';
+        badge.innerHTML = '<i class="fa-solid fa-lock-open mr-1"></i> Status Kunci: BEBAS';
+      }
+    }
+
+    let searchTimeout = null;
+    function debouncedSearch() {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => { applyFilters(); }, 300);
+    }
+
+    function populateFilters() {
+      const getUnique = (key) => [...new Set(globalData.map(d => d[key]))].filter(x => x && x !== '-').sort();
+      
+      const zonSet = getUnique('zon');
+      const bulanSet = getUnique('bulan').sort((a,b) => bulanOrder.indexOf(a) - bulanOrder.indexOf(b));
+      const paipSet = getUnique('jenisPaip');
+      const laporSet = getUnique('dilaporkanOleh');
+      const pengesananSet = getUnique('jenisPengesanan');
+      const dmaSet = getUnique('dmaDmz');
+
+      populateSelect('filter-zon', zonSet, 'Semua Zon');
+      populateSelect('filter-bulan', bulanSet, 'Semua Bulan');
+      populateSelect('filter-paip', paipSet, 'Semua Jenis Paip');
+      populateSelect('filter-lapor', laporSet, 'Semua Dilaporkan Oleh');
+      populateSelect('filter-pengesanan', pengesananSet, 'Semua Jenis Pengesanan');
+
+      populateSelect('k-bulan', bulanSet, 'Semua Bulan');
+      populateSelect('k-zon', zonSet, 'Semua Zon');
+      populateSelect('k-dma', dmaSet, 'Semua DMA/DMZ');
+      populateSelect('k-pengesanan', pengesananSet, 'Semua Pengesanan');
+      populateSelect('k-lapor', laporSet, 'Semua Pelapor');
+    }
+
+    function populateSelect(id, list, defaultText) {
+      const el = document.getElementById(id);
+      if(!el) return;
+      const currentVal = el.value;
+      let html = `<option value="">${defaultText}</option>`;
+      list.forEach(item => { html += `<option value="${escapeHtml(item)}">${escapeHtml(item)}</option>`; });
+      el.innerHTML = html;
+      el.value = currentVal;
+    }
+
+    function applyFilters() {
+      const searchTxt = document.getElementById('filter-search').value.toLowerCase();
+      const zonVal = document.getElementById('filter-zon').value;
+      const bulanVal = document.getElementById('filter-bulan').value;
+      const paipVal = document.getElementById('filter-paip').value;
+      const laporVal = document.getElementById('filter-lapor').value;
+      const pengesananVal = document.getElementById('filter-pengesanan').value;
+
+      filteredData = globalData.filter(item => {
+        const matchZon = !zonVal || item.zon === zonVal;
+        const matchBulan = !bulanVal || item.bulan === bulanVal;
+        const matchPaip = !paipVal || item.jenisPaip === paipVal;
+        const matchLapor = !laporVal || item.dilaporkanOleh === laporVal;
+        const matchPengesanan = !pengesananVal || item.jenisPengesanan === pengesananVal;
+        
+        if (!(matchZon && matchBulan && matchPaip && matchLapor && matchPengesanan)) return false;
+
+        if (searchTxt) {
+          return Object.values(item).some(val => String(val).toLowerCase().includes(searchTxt));
+        }
+        return true;
+      });
+
+      renderDashboard();
+    }
+
+    function resetFilters() {
+      document.getElementById('filter-search').value = '';
+      document.getElementById('filter-zon').value = '';
+      document.getElementById('filter-bulan').value = '';
+      document.getElementById('filter-paip').value = '';
+      document.getElementById('filter-lapor').value = '';
+      document.getElementById('filter-pengesanan').value = '';
+      filteredData = [...globalData];
+      renderDashboard();
+    }
+
+    function applyKemaskiniFilters() {
+      const tarikhTxt = document.getElementById('k-tarikh').value.toLowerCase();
+      const bulanVal = document.getElementById('k-bulan').value;
+      const zonVal = document.getElementById('k-zon').value;
+      const dmaVal = document.getElementById('k-dma').value;
+      const pengesananVal = document.getElementById('k-pengesanan').value;
+      const laporVal = document.getElementById('k-lapor').value;
+      const searchTxt = document.getElementById('k-search').value.toLowerCase();
+
+      const chemFiltered = globalData.filter(item => {
+        const matchTarikh = !tarikhTxt || String(item.tarikh).toLowerCase().includes(tarikhTxt);
+        const matchBulan = !bulanVal || item.bulan === bulanVal;
+        const matchZon = !zonVal || item.zon === zonVal;
+        const matchDma = !dmaVal || item.dmaDmz === dmaVal;
+        const matchPengesanan = !pengesananVal || item.jenisPengesanan === pengesananVal;
+        const matchLapor = !laporVal || item.dilaporkanOleh === laporVal;
+
+        if (!(matchTarikh && matchBulan && matchZon && matchDma && matchPengesanan && matchLapor)) return false;
+
+        if (searchTxt) {
+          return Object.values(item).some(val => String(val).toLowerCase().includes(searchTxt));
+        }
+        return true;
+      });
+
+      if (dtKemaskini) {
+        dtKemaskini.clear().rows.add(chemFiltered).draw(false);
+      }
+    }
+
+    function resetKemaskiniFilters() {
+      document.getElementById('k-tarikh').value = '';
+      document.getElementById('k-bulan').value = '';
+      document.getElementById('k-zon').value = '';
+      document.getElementById('k-dma').value = '';
+      document.getElementById('k-pengesanan').value = '';
+      document.getElementById('k-lapor').value = '';
+      document.getElementById('k-search').value = '';
+      if (dtKemaskini) {
+        dtKemaskini.clear().rows.add(globalData).draw(false);
+      }
+    }
+
+    function toggleGroupColumns(groupName, btnEl) {
+      if (!dtKemaskini) return;
+      let colIndices = [];
+      if (groupName === 'group1') {
+        colIndices = [5]; // Koordinat
+      } else if (groupName === 'group2') {
+        colIndices = [6, 11]; // Maklumat Kerosakan & Jenis Pengesanan
+      }
+
+      const isVisible = dtKemaskini.column(colIndices[0]).visible();
+      colIndices.forEach(idx => {
+        dtKemaskini.column(idx).visible(!isVisible, false);
+      });
+      dtKemaskini.draw(false);
+
+      if (!isVisible) {
+        btnEl.classList.remove('bg-slate-100', 'text-slate-700');
+        btnEl.classList.add('bg-primary', 'text-white', 'border-primary');
+        btnEl.innerHTML = `<i class="fa-solid fa-minus mr-1"></i> Tutup ${groupName === 'group1' ? 'Koordinat' : 'Maklumat Tambahan'}`;
+      } else {
+        btnEl.classList.remove('bg-primary', 'text-white', 'border-primary');
+        btnEl.classList.add('bg-slate-100', 'text-slate-700');
+        btnEl.innerHTML = `<i class="fa-solid fa-plus mr-1"></i> ${groupName === 'group1' ? 'Koordinat' : 'Maklumat Tambahan'}`;
+      }
+    }
+
+    function renderDashboard() {
+      updateKPIs();
+      updateCharts();
+      updateMapMarkers();
+      updateDataTables();
+      applyKemaskiniFilters();
+    }
+
+    function updateKPIs() {
+      document.getElementById('kpi-total').innerText = filteredData.length;
+      const bulanVal = document.getElementById('filter-bulan').value;
+      document.getElementById('kpi-bulan').innerText = bulanVal || 'Semua';
+
+      const zonCounts = countFrequency(filteredData, 'zon');
+      document.getElementById('kpi-zon').innerText = getTopKey(zonCounts) || '-';
+
+      const pengesananCounts = countFrequency(filteredData, 'jenisPengesanan');
+      document.getElementById('kpi-pengesanan').innerText = getTopKey(pengesananCounts) || '-';
+    }
+
+    function countFrequency(dataArray, key) {
+      const counts = {};
+      for (let i = 0; i < dataArray.length; i++) {
+        const val = dataArray[i][key];
+        if (val && val !== '-') counts[val] = (counts[val] || 0) + 1;
+      }
+      return counts;
+    }
+
+    function getTopKey(obj) {
+      let maxVal = 0, topKey = null;
+      for (let key in obj) {
+        if (obj[key] > maxVal) { maxVal = obj[key]; topKey = key; }
+      }
+      return topKey;
+    }
+
+    function createChartInstance(canvasId, type, indexAxisY) {
+      const ctx = document.getElementById(canvasId).getContext('2d');
+      return new Chart(ctx, {
+        type: type,
+        data: { labels: [], datasets: [{ data: [], backgroundColor: CHART_COLORS, borderWidth: 1 }] },
+        options: {
+          responsive: true, maintainAspectRatio: false, indexAxis: indexAxisY ? 'y' : 'x',
+          plugins: { 
+            legend: { display: type === 'pie' || type === 'doughnut', position: 'bottom' },
+            datalabels: {
+              anchor: type === 'pie' || type === 'doughnut' ? 'end' : 'end',
+              align: type === 'pie' || type === 'doughnut' ? 'outside' : (indexAxisY ? 'right' : 'top'),
+              color: '#334155',
+              font: { size: 10, weight: 'bold' },
+              formatter: (value) => value > 0 ? value : ''
+            }
+          },
+          onClick: (e, activeEls) => handleChartClick(canvasId, activeEls)
+        },
+        plugins: [ChartDataLabels]
+      });
+    }
+
+    function handleChartClick(canvasId, activeEls) {
+      if (activeEls.length === 0) return;
+      const index = activeEls[0].index;
+      const label = chartsCache[canvasId].data.labels[index];
+      
+      const filterMap = {
+        'chartZon': 'filter-zon', 'chartBulan': 'filter-bulan', 
+        'chartPaip': 'filter-paip', 'chartLapor': 'filter-lapor', 'chartPengesanan': 'filter-pengesanan'
+      };
+      
+      if (filterMap[canvasId]) {
+        document.getElementById(filterMap[canvasId]).value = label;
+        applyFilters();
+      }
+    }
+
+    function updateCharts() {
+      mutateChartData('chartBulan', countFrequency(filteredData, 'bulan'), bulanOrder);
+      mutateChartData('chartPengesanan', countFrequency(filteredData, 'jenisPengesanan'));
+      mutateChartData('chartPaip', countFrequency(filteredData, 'jenisPaip'));
+      mutateChartData('chartLapor', countFrequency(filteredData, 'dilaporkanOleh'));
+      mutateChartData('chartZon', countFrequency(filteredData, 'zon'));
+    }
+
+    function mutateChartData(chartId, countsObj, customOrder = null) {
+      const chart = chartsCache[chartId];
+      let labels = Object.keys(countsObj);
+      
+      if (customOrder) {
+        labels.sort((a,b) => customOrder.indexOf(a) - customOrder.indexOf(b));
+      } else {
+        labels.sort((a,b) => countsObj[b] - countsObj[a]);
+      }
+      
+      chart.data.labels = labels;
+      chart.data.datasets[0].data = labels.map(l => countsObj[l]);
+      chart.update();
+    }
+
+    function updateMapMarkers() {
+      if (!markerClusterGroup || !mapInstance) return;
+      markerClusterGroup.clearLayers();
+      
+      const totalRecords = filteredData.length;
+      let successCount = 0;
+      let ignoredCount = 0;
+      const bounds = [];
+
+      for (let i = 0; i < filteredData.length; i++) {
+        const item = filteredData[i];
+        
+        const parsed = parseCoordinates(item.kordinat);
+        
+        if (!parsed.coords) {
+          ignoredCount++;
+          console.warn(`[DEBUG PETA] Rekod [No Aduan: ${item.noAduan || 'N/A'}] diabaikan. Sebab: ${parsed.reason}`);
+          continue;
+        }
+
+        try {
+          const lat = parsed.coords[0];
+          const lng = parsed.coords[1];
+          bounds.push([lat, lng]);
+
+          const popupHtml = `
+            <div class="p-2 text-xs">
+              <b>Aduan:</b> ${escapeHtml(item.noAduan)}<br>
+              <b>Zon:</b> ${escapeHtml(item.zon)}<br>
+              <b>Alamat:</b> ${escapeHtml(item.alamat)}<br>
+              <a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" class="text-primary font-bold underline mt-1 inline-block">Buka di Google Maps &rarr;</a>
+            </div>
+          `;
+          
+          const marker = L.marker([lat, lng]).bindPopup(popupHtml);
+          markerClusterGroup.addLayer(marker);
+          successCount++;
+        } catch (err) {
+          ignoredCount++;
+          console.error(`[DEBUG PETA] Ralat tidak dijangka semasa membina marker bagi [No Aduan: ${item.noAduan || 'N/A'}]:`, err.message);
+          continue;
+        }
+      }
+
+      console.log("=== LAPORAN DEBUGGING PETA (LEAFLET) ===");
+      console.log("Jumlah rekod diproses:", totalRecords);
+      console.log("Jumlah marker berjaya dipaparkan:", successCount);
+      console.log("Jumlah koordinat yang diabaikan:", ignoredCount);
+      console.log("=========================================");
+
+      setTimeout(() => {
+        if (mapInstance) {
+          mapInstance.invalidateSize();
+          if (bounds.length > 0) {
+            mapInstance.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+          } else {
+            mapInstance.setView([2.7258, 101.9424], 12);
+          }
+        }
+      }, 300);
+    }
+
+    function updateDataTables() {
+      if (dtRumusan) {
+        dtRumusan.clear().rows.add(filteredData).draw(false);
+      }
+    }
+
+    function openEditModal(uniqueNo) {
+      const item = globalData.find(d => d.uniqueNo === uniqueNo);
+      if (!item) {
+        showToast('Rekod tidak dijumpai.', 'danger');
+        return;
+      }
+
+      document.getElementById('edit-uniqueNo').value = item.uniqueNo;
+      document.getElementById('modalUniqueNoText').innerText = `Unique No: ${item.uniqueNo}`;
+      
+      const fields = ['tarikh', 'noAduan', 'dilaporkanOleh', 'zon', 'dmaDmz', 'alamat', 'kordinat', 'maklumatKerosakan', 'maklumatKebocoran', 'jenisPaip', 'saizPaip', 'jenisPengesanan'];
+      fields.forEach(f => {
+        const el = document.getElementById(`edit-${f}`);
+        if(el) el.value = item[f] === '-' ? '' : item[f];
+      });
+
+      const fieldsToLock = fields.filter(f => f !== 'noAduan');
+      if (isLockEdit === 'YA') {
+        fieldsToLock.forEach(id => {
+          const el = document.getElementById(`edit-${id}`);
+          if(el) { el.setAttribute('readonly', true); el.classList.add('bg-slate-200', 'text-slate-500'); }
+        });
+        const nAduan = document.getElementById('edit-noAduan');
+        if(nAduan) { nAduan.removeAttribute('readonly'); nAduan.classList.remove('bg-slate-200', 'text-slate-500'); }
+      } else {
+        fieldsToLock.forEach(id => {
+          const el = document.getElementById(`edit-${id}`);
+          if(el) { el.removeAttribute('readonly'); el.classList.remove('bg-slate-200', 'text-slate-500'); }
+        });
+      }
+
+      document.getElementById('editModal').classList.remove('hidden');
+    }
+
+    function closeEditModal() {
+      document.getElementById('editModal').classList.add('hidden');
+    }
+
+    let confirmCallback = null;
+    function confirmUpdate() {
+      const noAduan = document.getElementById('edit-noAduan').value.trim();
+      if (!noAduan) {
+        showToast('No Aduan tidak boleh kosong.', 'danger');
+        return;
+      }
+      
+      document.getElementById('customConfirmModal').classList.remove('hidden');
+      confirmCallback = (isConfirmed) => {
+        if (isConfirmed) {
+          submitUpdateToServer();
+        }
+      };
+    }
+
+    function closeCustomConfirm(result) {
+      document.getElementById('customConfirmModal').classList.add('hidden');
+      if (confirmCallback) {
+        confirmCallback(result);
+        confirmCallback = null;
+      }
+    }
+
+    async function submitUpdateToServer() {
+      const noAduan = document.getElementById('edit-noAduan').value.trim();
+
+      const formData = {
+        uniqueNo: document.getElementById('edit-uniqueNo').value,
+        tarikh: document.getElementById('edit-tarikh').value,
+        noAduan: noAduan,
+        dilaporkanOleh: document.getElementById('edit-dilaporkanOleh').value,
+        zon: document.getElementById('edit-zon').value,
+        dmaDmz: document.getElementById('edit-dmaDmz').value,
+        alamat: document.getElementById('edit-alamat').value,
+        kordinat: document.getElementById('edit-kordinat').value,
+        maklumatKerosakan: document.getElementById('edit-maklumatKerosakan').value,
+        maklumatKebocoran: document.getElementById('edit-maklumatKebocoran').value,
+        jenisPaip: document.getElementById('edit-jenisPaip').value,
+        saizPaip: document.getElementById('edit-saizPaip').value,
+        jenisPengesanan: document.getElementById('edit-jenisPengesanan').value,
+        bulan: "-"
+      };
+
+      if(formData.tarikh) {
+         try {
+           const dt = new Date(formData.tarikh);
+           if(!isNaN(dt)) formData.bulan = bulanOrder[dt.getMonth()];
+         } catch(e){}
+      }
+
+      showLoading(true);
+      closeEditModal();
+
+      try {
+        const response = await fetch(CF_WORKER_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Secret-Code': SECRET_CODE
+          },
+          body: JSON.stringify({ action: 'updateRecord', data: formData })
+        });
+        
+        const res = await response.json();
+        if (res.success) {
+          showToast(res.message, 'success');
+          loadData();
+        } else {
+          showLoading(false);
+          showToast(res.message, 'danger');
+        }
+      } catch (err) {
+        showLoading(false);
+        showToast('Kemaskini gagal: ' + err.message, 'danger');
+      }
+    }
+
+    function switchTab(tabName) {
+      // Dikecualikan #nav-logout supaya butang Log Keluar tidak ditukar warna secara tidak sengaja
+      document.querySelectorAll('header nav button:not(#nav-logout)').forEach(btn => {
+        btn.classList.remove('active', 'bg-primary', 'text-white');
+        btn.classList.add('bg-slate-800/80', 'text-slate-300');
+      });
+      const activeBtn = document.getElementById('nav-' + tabName);
+      if(activeBtn) {
+        activeBtn.classList.remove('bg-slate-800/80', 'text-slate-300');
+        activeBtn.classList.add('active', 'bg-primary', 'text-white');
+      }
+
+      if (tabName === 'rumusan') {
+        document.getElementById('tab-rumusan').classList.remove('hidden');
+        document.getElementById('tab-kemaskini').classList.add('hidden');
+        if (mapInstance) {
+          setTimeout(() => {
+            mapInstance.invalidateSize();
+            updateMapMarkers();
+          }, 200);
+        }
+      } else {
+        document.getElementById('tab-rumusan').classList.add('hidden');
+        document.getElementById('tab-kemaskini').classList.remove('hidden');
+        if (dtKemaskini) dtKemaskini.columns.adjust().draw();
+      }
+    }
+
+    function showLoading(show) {
+      const loader = document.getElementById('loadingOverlay');
+      if (show) {
+        loader.classList.remove('hidden');
+      } else {
+        loader.classList.add('hidden');
+      }
+    }
+
+    let toastTimer = null;
+    function showToast(message, type = 'success') {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toastMessage');
+      const toastIcon = document.getElementById('toastIcon');
+
+      clearTimeout(toastTimer);
+      toastMsg.innerText = message;
+      
+      const baseClass = 'fixed bottom-6 right-6 z-50 transform translate-y-0 opacity-100 transition-all duration-300 flex items-center space-x-3 px-5 py-3 rounded-2xl shadow-xl text-white font-medium text-xs';
+      if (type === 'success') {
+        toast.className = baseClass + ' bg-success';
+        toastIcon.className = 'fa-solid fa-circle-check text-base';
+      } else {
+        toast.className = baseClass + ' bg-danger';
+        toastIcon.className = 'fa-solid fa-circle-exclamation text-base';
+      }
+
+      toastTimer = setTimeout(() => {
+        toast.className = 'fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 flex items-center space-x-3 px-5 py-3 rounded-2xl shadow-xl text-white font-medium text-xs';
+      }, 3500);
+    }
+
+    function refreshData() {
+      loadData();
+      showToast('Data berjaya dimuat semula.', 'success');
+    }
+  </script>
+</body>
+</html>
