@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log Masuk | Dashboard Active Leakage Detection PD</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'], },
+                    colors: {
+                        brand: { 50: '#eff6ff', 100: '#dbeafe', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 900: '#1e3a8a', 950: '#172554', },
+                        enterprise: { dark: '#0B1120', card: '#111827', border: '#1F2937' }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0B1120;
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(217, 100%, 15%, 0.4) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, hsla(217, 100%, 15%, 0.4) 0px, transparent 50%);
+            background-attachment: fixed; color: #f3f4f6;
+        }
+        .bg-grid {
+            background-size: 40px 40px;
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            position: absolute; inset: 0; z-index: -1;
+        }
+        input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:focus, input:-webkit-autofill:active{
+            -webkit-box-shadow: 0 0 0 30px #1F2937 inset !important; -webkit-text-fill-color: white !important; transition: background-color 5000s ease-in-out 0s;
+        }
+        .spinner { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 antialiased selection:bg-brand-500 selection:text-white relative overflow-hidden">
+    
+    <div class="bg-grid"></div>
+
+    <div id="login-view" class="w-full max-w-md relative z-10 hidden">
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-brand-900/50 border border-brand-500/30 mb-6 shadow-[0_0_15px_rgba(37,99,235,0.2)]">
+                <i class="ph ph-drop text-3xl text-brand-500"></i>
+            </div>
+            <h1 class="text-2xl font-bold tracking-tight text-white mb-2">
+                SISTEM PEMANTAUAN<br>PEMULIHAN BEKALAN AIR<br>PORT DICKSON
+            </h1>
+            <p class="text-xs font-medium tracking-widest text-brand-500 uppercase"><br></p>
+        </div>
+
+        <div class="bg-enterprise-card border border-enterprise-border rounded-2xl shadow-2xl backdrop-blur-sm p-8 relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-brand-500 to-transparent opacity-50"></div>
+            
+            <div class="mb-6 flex items-center gap-2 border-b border-gray-800 pb-4">
+                <i class="ph ph-shield-check text-gray-400"></i>
+                <h2 class="text-sm font-semibold text-gray-300 tracking-wider uppercase">Field Login</h2>
+            </div>
+
+            <div id="error-message" class="hidden mb-6 p-4 bg-red-900/20 border border-red-500/30 rounded-lg flex items-center gap-3">
+                <i class="ph ph-warning-circle text-red-400 text-lg"></i>
+                <p class="text-sm text-red-400 font-medium">Username atau password tidak sah.</p>
+            </div>
+
+            <form id="login-form" class="space-y-5">
+                <div>
+                    <label for="username" class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-1.5">Username / User ID</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="ph ph-user text-gray-500 text-lg"></i>
+                        </div>
+                        <input type="text" id="username" name="username" required class="block w-full pl-10 pr-3 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all sm:text-sm" placeholder="Masukkan ID Pengguna">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="password" class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-1.5">Password</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="ph ph-lock-key text-gray-500 text-lg"></i>
+                        </div>
+                        <input type="password" id="password" name="password" required class="block w-full pl-10 pr-10 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all sm:text-sm" placeholder="••••••••">
+                        <button type="button" id="toggle-password" tabindex="-1" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-300 focus:outline-none transition-colors">
+                            <i class="ph ph-eye text-lg" id="eye-icon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" id="submit-btn" class="w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-brand-600 hover:bg-brand-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-enterprise-card focus:ring-brand-500 transition-all mt-4 disabled:opacity-70 disabled:cursor-not-allowed group">
+                    <svg id="loading-spinner" class="hidden animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span id="btn-text" class="flex items-center gap-2">LOG MASUK <i class="ph ph-sign-in group-hover:translate-x-1 transition-transform"></i></span>
+                </button>
+            </form>
+            
+            <div class="mt-8 text-center border-t border-gray-800 pt-6">
+                <p class="text-[10px] text-gray-500 uppercase tracking-widest">Milik SAINS PD</p>
+                <p class="text-[10px] text-gray-600 mt-1">Authorized Personnel Only</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // URL Cloudflare dan Secret Code anda
+        const CF_WORKER_URL = 'https://ald-gateway.sainspdwater.workers.dev';
+        const SECRET_CODE = '2366211_URL';
+
+        const UIModule = {
+            init() { this.cacheDOM(); this.bindEvents(); },
+            cacheDOM() {
+                this.form = document.getElementById('login-form');
+                this.usernameInput = document.getElementById('username');
+                this.passwordInput = document.getElementById('password');
+                this.togglePasswordBtn = document.getElementById('toggle-password');
+                this.eyeIcon = document.getElementById('eye-icon');
+                this.submitBtn = document.getElementById('submit-btn');
+                this.btnText = document.getElementById('btn-text');
+                this.loadingSpinner = document.getElementById('loading-spinner');
+                this.errorMessage = document.getElementById('error-message');
+                this.loginView = document.getElementById('login-view');
+            },
+            bindEvents() {
+                this.togglePasswordBtn.addEventListener('click', () => this.togglePassword());
+                this.form.addEventListener('submit', (e) => this.handleSubmit(e));
+                this.usernameInput.addEventListener('input', () => this.hideError());
+                this.passwordInput.addEventListener('input', () => this.hideError());
+            },
+            togglePassword() {
+                const type = this.passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                this.passwordInput.setAttribute('type', type);
+                if (type === 'text') { this.eyeIcon.className = 'ph ph-eye-slash text-lg'; } 
+                else { this.eyeIcon.className = 'ph ph-eye text-lg'; }
+            },
+            setLoadingState(isLoading) {
+                if (isLoading) {
+                    this.submitBtn.disabled = true;
+                    this.btnText.classList.add('hidden');
+                    this.loadingSpinner.classList.remove('hidden');
+                } else {
+                    this.submitBtn.disabled = false;
+                    this.btnText.classList.remove('hidden');
+                    this.loadingSpinner.classList.add('hidden');
+                }
+            },
+            showError() {
+                this.errorMessage.classList.remove('hidden');
+                this.form.classList.add('animate-bounce');
+                setTimeout(() => this.form.classList.remove('animate-bounce'), 300);
+            },
+            hideError() { this.errorMessage.classList.add('hidden'); },
+            showLoginView() {
+                this.loginView.classList.remove('hidden');
+                this.form.reset();
+                this.passwordInput.setAttribute('type', 'password');
+                this.eyeIcon.className = 'ph ph-eye text-lg';
+            },
+            async handleSubmit(e) {
+                e.preventDefault();
+                this.hideError();
+                this.setLoadingState(true);
+
+                const username = this.usernameInput.value.trim();
+                const password = this.passwordInput.value;
+
+                try {
+                    const authResult = await AuthModule.authenticate(username, password);
+                    if (authResult.success) {
+                        SessionModule.createSession(authResult.token);
+                        window.location.href = './dashboard.html';
+                    } else {
+                        this.showError();
+                    }
+                } catch (error) {
+                    console.error("Auth Error:", error);
+                    this.showError();
+                } finally {
+                    this.setLoadingState(false);
+                }
+            }
+        };
+
+        const BackendAPI = {
+            async fetchLogin(username, password) {
+                try {
+                    const response = await fetch(CF_WORKER_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Secret-Code': SECRET_CODE
+                        },
+                        body: JSON.stringify({ action: 'login', username: username, password: password })
+                    });
+                    
+                    const result = await response.json();
+                    if (result.success) {
+                        return { status: 200, data: { token: result.token } };
+                    } else {
+                        return { status: 401, error: result.message };
+                    }
+                } catch (error) {
+                    return { status: 500, error: "Gagal berhubung dengan pelayan." };
+                }
+            }
+        };
+
+        const AuthModule = {
+            async authenticate(username, password) {
+                const response = await BackendAPI.fetchLogin(username, password);
+                if (response.status === 200 && response.data.token) {
+                    return { success: true, token: response.data.token };
+                }
+                return { success: false };
+            },
+            logout() {
+                SessionModule.destroySession();
+                UIModule.showLoginView();
+            }
+        };
+
+        const SessionModule = {
+            createSession(token) {
+                sessionStorage.setItem('pd_water_auth_token', token);
+                sessionStorage.setItem('pd_water_login_time', Date.now().toString());
+            },
+            destroySession() {
+                sessionStorage.removeItem('pd_water_auth_token');
+                sessionStorage.removeItem('pd_water_login_time');
+            },
+            isAuthenticated() {
+                return !!sessionStorage.getItem('pd_water_auth_token');
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            UIModule.init();
+            if (SessionModule.isAuthenticated()) {
+                window.location.href = './dashboard.html';
+            } else {
+                UIModule.showLoginView();
+            }
+        });
+    </script>
+</body>
+</html>
