@@ -1181,7 +1181,8 @@
         const res = await response.json();
         if (res.success) {
           showToast(res.message, 'success');
-          backgroundLoadData();
+          showLoading(false); // Tutup skrin loading selepas update berjaya
+          backgroundLoadData(); // Segarkan data di latar belakang
         } else {
           showLoading(false);
           showToast(res.message, 'danger');
