@@ -1280,22 +1280,6 @@
       
       if(btnIcon) btnIcon.classList.remove('fa-spin');
     }
-
-    function clearCacheServer() {
-      fetch('https://ald-gateway.sainspdwater.workers.dev', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Secret-Code': '2366211_URL' },
-        body: JSON.stringify({ action: 'clearCache' })
-      })
-      .then(res => res.json())
-      .then(data => {
-        alert(data.message);
-        if(data.success) {
-          location.reload();
-        }
-      })
-      .catch(err => alert('Ralat: ' + err.message));
-    }
   </script>
 </body>
 </html>
