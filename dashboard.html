@@ -477,6 +477,11 @@
     <span id="toastMessage">Mesej Notifikasi</span>
   </div>
 
+  <!-- BUTANG RESET CACHE SEMENTARA -->
+  <button onclick="clearCacheServer()" style="background: #ff4d4d; color: white; padding: 12px 20px; border-radius: 8px; border: none; cursor: pointer; position: fixed; bottom: 20px; right: 20px; z-index: 9999; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
+    🔄 Reset Cache Server
+  </button>
+
   <!-- JAVASCRIPT LOGIC -->
   <script>
     // PERLINDUNGAN SESI
@@ -1181,7 +1186,6 @@
         const res = await response.json();
         if (res.success) {
           showToast(res.message, 'success');
-          // Tarik semula data baharu secara langsung dan pastikan loading ditutup apabila selesai
           await loadData();
         } else {
           showLoading(false);
@@ -1252,36 +1256,30 @@
       }, 3500);
     }
 
-    <!-- BUTANG RESET CACHE SEMENTARA (Boleh dibuang selepas data keluar penuh) -->
-    <button onclick="clearCacheServer()" style="background: #ff4d4d; color: white; padding: 12px 20px; border-radius: 8px; border: none; cursor: pointer; position: fixed; bottom: 20px; right: 20px; z-index: 9999; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
-      🔄 Reset Cache Server
-    </button>
+    async function refreshData() {
+      const btnIcon = document.querySelector('button[onclick="refreshData()"] i');
+      if(btnIcon) btnIcon.classList.add('fa-spin');
+      
+      await loadData();
+      
+      if(btnIcon) btnIcon.classList.remove('fa-spin');
+    }
 
-    <script>
-      async function refreshData() {
-        const btnIcon = document.querySelector('button[onclick="refreshData()"] i');
-        if(btnIcon) btnIcon.classList.add('fa-spin');
-        
-        await loadData();
-        
-        if(btnIcon) btnIcon.classList.remove('fa-spin');
-      }
-
-      function clearCacheServer() {
-        fetch('https://ald-gateway.sainspdwater.workers.dev', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-Secret-Code': '2366211_URL' },
-          body: JSON.stringify({ action: 'clearCache' })
-        })
-        .then(res => res.json())
-        .then(data => {
-          alert(data.message);
-          if(data.success) {
-            location.reload(); // Muat semula halaman secara automatik selepas berjaya
-          }
-        })
-        .catch(err => alert('Ralat: ' + err.message));
-      }
-    </script>
-  </body>
+    function clearCacheServer() {
+      fetch('https://ald-gateway.sainspdwater.workers.dev', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Secret-Code': '2366211_URL' },
+        body: JSON.stringify({ action: 'clearCache' })
+      })
+      .then(res => res.json())
+      .then(data => {
+        alert(data.message);
+        if(data.success) {
+          location.reload();
+        }
+      })
+      .catch(err => alert('Ralat: ' + err.message));
+    }
+  </script>
+</body>
 </html>
