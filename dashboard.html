@@ -498,6 +498,9 @@
     let dtRumusan = null;
     let dtKemaskini = null;
 
+    let currentDataVersion = "0";
+    let pollingInterval = null;
+
     const bulanOrder = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ogo", "Sep", "Okt", "Nov", "Dis"];
     const CHART_COLORS = ['#0056D2', '#2E7DFF', '#2E7D32', '#ED6C02', '#8B5CF6', '#EC4899', '#06B6D4', '#10B981', '#F59E0B', '#3B82F6'];
 
@@ -511,7 +514,6 @@
       window.location.href = './index.html';
     }
 
-    // Parser koordinat yang diselaraskan untuk mengabaikan nilai kosong/tidak sah tanpa menghentikan proses
     function parseCoordinates(str) {
       if (str === null || str === undefined) {
         return { coords: null, reason: 'Nilai adalah null atau undefined' };
@@ -637,7 +639,6 @@
       mapInstance.addLayer(markerClusterGroup);
     }
 
-    // Sambungan data asal melalui Cloudflare Worker API REST
     async function loadData() {
       showLoading(true);
       try {
@@ -651,19 +652,58 @@
         });
         
         const result = await response.json();
-        handleDataLoaded(result);
+        handleDataLoaded(result, false);
       } catch (error) {
-        handleDataError(error);
+        showLoading(false);
+        showToast('Gagal memuatkan data: ' + error.message, 'danger');
       }
     }
 
-    function handleDataLoaded(response) {
+    async function backgroundLoadData() {
+      try {
+        const response = await fetch(CF_WORKER_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Secret-Code': SECRET_CODE
+          },
+          body: JSON.stringify({ action: 'getData' })
+        });
+        const result = await response.json();
+        handleDataLoaded(result, true);
+      } catch (error) {
+        console.error("Background sync error:", error);
+      }
+    }
+
+    function startSmartPolling() {
+      if (pollingInterval) clearInterval(pollingInterval);
+      pollingInterval = setInterval(async () => {
+        try {
+          const response = await fetch(CF_WORKER_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Secret-Code': SECRET_CODE
+            },
+            body: JSON.stringify({ action: 'checkVersion' })
+          });
+          const result = await response.json();
+          if (result.success && result.version && result.version !== currentDataVersion && currentDataVersion !== "0") {
+             backgroundLoadData();
+          }
+        } catch (error) {}
+      }, 10000);
+    }
+
+    function handleDataLoaded(response, isSoftRefresh = false) {
       if (!response.success) {
-        showLoading(false);
+        if (!isSoftRefresh) showLoading(false);
         showToast('Ralat: ' + response.message, 'danger');
         return;
       }
 
+      if (response.version) currentDataVersion = response.version;
       isLockEdit = response.lockEdit;
       updateLockBadgeUI();
 
@@ -694,18 +734,34 @@
       }
 
       filteredData = [...globalData];
-      populateFilters();
-      applyFilters();
-      showLoading(false);
+
+      if (isSoftRefresh) {
+        const fZon = document.getElementById('filter-zon').value;
+        const fBulan = document.getElementById('filter-bulan').value;
+        const fPaip = document.getElementById('filter-paip').value;
+        const fLapor = document.getElementById('filter-lapor').value;
+        const fPengesanan = document.getElementById('filter-pengesanan').value;
+
+        populateFilters();
+        
+        document.getElementById('filter-zon').value = fZon;
+        document.getElementById('filter-bulan').value = fBulan;
+        document.getElementById('filter-paip').value = fPaip;
+        document.getElementById('filter-lapor').value = fLapor;
+        document.getElementById('filter-pengesanan').value = fPengesanan;
+
+        applyFilters();
+        showToast('Data baharu berjaya disegerakkan (Real-time)', 'success');
+      } else {
+        populateFilters();
+        applyFilters();
+        showLoading(false);
+        startSmartPolling();
+      }
 
       setTimeout(() => {
         if (mapInstance) mapInstance.invalidateSize();
       }, 200);
-    }
-
-    function handleDataError(error) {
-      showLoading(false);
-      showToast('Gagal memuatkan data: ' + error.message, 'danger');
     }
 
     function escapeHtml(unsafe) {
@@ -1082,7 +1138,6 @@
       }
     }
 
-    // Fungsi updateRecord asal yang disambungkan ke API Cloudflare Worker
     async function submitUpdateToServer() {
       const noAduan = document.getElementById('edit-noAduan').value.trim();
 
@@ -1126,7 +1181,7 @@
         const res = await response.json();
         if (res.success) {
           showToast(res.message, 'success');
-          loadData();
+          backgroundLoadData();
         } else {
           showLoading(false);
           showToast(res.message, 'danger');
@@ -1196,9 +1251,13 @@
       }, 3500);
     }
 
-    function refreshData() {
-      loadData();
-      showToast('Data berjaya dimuat semula.', 'success');
+    async function refreshData() {
+      const btnIcon = document.querySelector('button[onclick="refreshData()"] i');
+      if(btnIcon) btnIcon.classList.add('fa-spin');
+      
+      await backgroundLoadData();
+      
+      if(btnIcon) btnIcon.classList.remove('fa-spin');
     }
   </script>
 </body>
