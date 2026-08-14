@@ -477,11 +477,6 @@
     <span id="toastMessage">Mesej Notifikasi</span>
   </div>
 
-  <!-- BUTANG RESET CACHE SEMENTARA -->
-  <button onclick="clearCacheServer()" style="background: #ff4d4d; color: white; padding: 12px 20px; border-radius: 8px; border: none; cursor: pointer; position: fixed; bottom: 20px; right: 20px; z-index: 9999; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
-    🔄 Reset Cache Server
-  </button>
-
   <!-- JAVASCRIPT LOGIC -->
   <script>
     // PERLINDUNGAN SESI
@@ -610,16 +605,13 @@
             data: null,
             className: 'text-center space-x-2',
             render: function (data, type, row) {
-              const hasUniqueNo = row.uniqueNo && row.uniqueNo !== '' && row.uniqueNo !== '-';
-              
               const editBtn = `
                 <div class="tooltip-wrap">
-                  <button onclick="openEditModal('${row._internalId}')" class="p-2.5 ${hasUniqueNo ? 'bg-blue-50 text-primary hover:bg-blue-100 cursor-pointer hover:scale-105' : 'bg-slate-100 text-slate-400 cursor-not-allowed opacity-60'} rounded-xl transition shadow-sm">
+                  <button onclick="openEditModal('${escapeHtml(row.uniqueNo)}')" class="p-2.5 bg-blue-50 text-primary hover:bg-blue-100 rounded-xl transition shadow-sm hover:scale-105">
                     <i class="fa-solid fa-pencil text-sm"></i>
                   </button>
-                  <span class="tooltip-text">${hasUniqueNo ? 'Edit Rekod' : 'Tiada Unique No'}</span>
+                  <span class="tooltip-text">Edit Rekod</span>
                 </div>`;
-                
               let mapBtn = '';
               const parsed = parseCoordinates(row.kordinat);
               if (parsed.coords) {
@@ -701,7 +693,7 @@
              backgroundLoadData();
           }
         } catch (error) {}
-      }, 60000); // Polling interval dipanjangkan kepada 60s untuk menjimatkan memori & prestasi
+      }, 10000);
     }
 
     function handleDataLoaded(response, isSoftRefresh = false) {
@@ -718,28 +710,27 @@
       const rawData = response.data;
       globalData = [];
       
-      const safe = value => (value === null || value === undefined || String(value).trim() === '') ? '-' : String(value).trim();
-
       for (let i = 0; i < rawData.length; i++) {
         const r = rawData[i];
-        
-        globalData.push({
-          _internalId: 'ROW-' + i, // Penanda dalaman untuk fail-safe (mengelak membuang rekod ketiadaan Unique No)
-          tarikh: (r[0] === null || r[0] === undefined || String(r[0]).trim() === '') ? '-' : String(r[0]).trim(),
-          noAduan: safe(r[1]),
-          dmaDmz: safe(r[2]),
-          alamat: safe(r[3]),
-          kordinat: (r[4] === null || r[4] === undefined) ? '' : String(r[4]).trim(),
-          maklumatKerosakan: safe(r[5]),
-          maklumatKebocoran: safe(r[6]),
-          jenisPaip: safe(r[7]),
-          saizPaip: safe(r[8]),
-          dilaporkanOleh: safe(r[9]),
-          jenisPengesanan: safe(r[10]),
-          zon: safe(r[11]),
-          bulan: safe(r[12]),
-          uniqueNo: (r[13] === null || r[13] === undefined) ? '' : String(r[13]).trim()
-        });
+        const uniqueNo = r[13];
+        if (uniqueNo) {
+          globalData.push({
+            tarikh: r[0] || '-',
+            noAduan: r[1] || '-',
+            dmaDmz: r[2] || '-',
+            alamat: r[3] || '-',
+            kordinat: r[4] || '',
+            maklumatKerosakan: r[5] || '-',
+            maklumatKebocoran: r[6] || '-',
+            jenisPaip: r[7] || '-',
+            saizPaip: r[8] || '-',
+            dilaporkanOleh: r[9] || '-',
+            jenisPengesanan: r[10] || '-',
+            zon: r[11] || '-',
+            bulan: r[12] || '-',
+            uniqueNo: r[13]
+          });
+        }
       }
 
       filteredData = [...globalData];
@@ -847,11 +838,7 @@
         if (!(matchZon && matchBulan && matchPaip && matchLapor && matchPengesanan)) return false;
 
         if (searchTxt) {
-          // Kecualikan atribut dalaman _internalId sewaktu carian universal
-          return Object.keys(item).some(key => {
-            if (key === '_internalId') return false;
-            return String(item[key]).toLowerCase().includes(searchTxt);
-          });
+          return Object.values(item).some(val => String(val).toLowerCase().includes(searchTxt));
         }
         return true;
       });
@@ -890,10 +877,7 @@
         if (!(matchTarikh && matchBulan && matchZon && matchDma && matchPengesanan && matchLapor)) return false;
 
         if (searchTxt) {
-          return Object.keys(item).some(key => {
-            if (key === '_internalId') return false;
-            return String(item[key]).toLowerCase().includes(searchTxt);
-          });
+          return Object.values(item).some(val => String(val).toLowerCase().includes(searchTxt));
         }
         return true;
       });
@@ -1092,15 +1076,10 @@
       }
     }
 
-    function openEditModal(internalId) {
-      const item = globalData.find(d => d._internalId === internalId);
+    function openEditModal(uniqueNo) {
+      const item = globalData.find(d => d.uniqueNo === uniqueNo);
       if (!item) {
         showToast('Rekod tidak dijumpai.', 'danger');
-        return;
-      }
-      
-      if (!item.uniqueNo || item.uniqueNo === '-' || item.uniqueNo === '') {
-        showToast('Rekod ini tidak boleh dikemaskini kerana tiada Unique No di Pangkalan Data.', 'warning');
         return;
       }
 
@@ -1202,6 +1181,7 @@
         const res = await response.json();
         if (res.success) {
           showToast(res.message, 'success');
+          // Tarik semula data baharu secara langsung dan pastikan loading ditutup apabila selesai
           await loadData();
         } else {
           showLoading(false);
