@@ -1252,7 +1252,13 @@
       }, 3500);
     }
 
-    async function refreshData() {
+    <!-- BUTANG RESET CACHE SEMENTARA (Boleh dibuang selepas data keluar penuh) -->
+    <button onclick="clearCacheServer()" style="background: #ff4d4d; color: white; padding: 12px 20px; border-radius: 8px; border: none; cursor: pointer; position: fixed; bottom: 20px; right: 20px; z-index: 9999; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
+      🔄 Reset Cache Server
+    </button>
+
+    <script>
+      async function refreshData() {
         const btnIcon = document.querySelector('button[onclick="refreshData()"] i');
         if(btnIcon) btnIcon.classList.add('fa-spin');
         
