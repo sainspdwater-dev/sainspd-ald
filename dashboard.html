@@ -1181,8 +1181,8 @@
         const res = await response.json();
         if (res.success) {
           showToast(res.message, 'success');
-          showLoading(false); // Tutup skrin loading selepas update berjaya
-          backgroundLoadData(); // Segarkan data di latar belakang
+          // Tarik semula data baharu secara langsung dan pastikan loading ditutup apabila selesai
+          await loadData();
         } else {
           showLoading(false);
           showToast(res.message, 'danger');
@@ -1256,7 +1256,7 @@
       const btnIcon = document.querySelector('button[onclick="refreshData()"] i');
       if(btnIcon) btnIcon.classList.add('fa-spin');
       
-      await backgroundLoadData();
+      await loadData();
       
       if(btnIcon) btnIcon.classList.remove('fa-spin');
     }
