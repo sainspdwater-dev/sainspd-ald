@@ -1253,13 +1253,29 @@
     }
 
     async function refreshData() {
-      const btnIcon = document.querySelector('button[onclick="refreshData()"] i');
-      if(btnIcon) btnIcon.classList.add('fa-spin');
-      
-      await loadData();
-      
-      if(btnIcon) btnIcon.classList.remove('fa-spin');
-    }
-  </script>
-</body>
+        const btnIcon = document.querySelector('button[onclick="refreshData()"] i');
+        if(btnIcon) btnIcon.classList.add('fa-spin');
+        
+        await loadData();
+        
+        if(btnIcon) btnIcon.classList.remove('fa-spin');
+      }
+
+      function clearCacheServer() {
+        fetch('https://ald-gateway.sainspdwater.workers.dev', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Secret-Code': '2366211_URL' },
+          body: JSON.stringify({ action: 'clearCache' })
+        })
+        .then(res => res.json())
+        .then(data => {
+          alert(data.message);
+          if(data.success) {
+            location.reload(); // Muat semula halaman secara automatik selepas berjaya
+          }
+        })
+        .catch(err => alert('Ralat: ' + err.message));
+      }
+    </script>
+  </body>
 </html>
