@@ -56,7 +56,6 @@
             <h1 class="text-2xl font-bold tracking-tight text-white mb-2">
                 DASHBOARD PEMANTAUAN<br>ACTIVE LEAKAGE DETECTION<br>PORT DICKSON
             </h1>
-            <p class="text-xs font-medium tracking-widest text-brand-500 uppercase"><br></p>
         </div>
 
         <div class="bg-enterprise-card border border-enterprise-border rounded-2xl shadow-2xl backdrop-blur-sm p-8 relative overflow-hidden">
@@ -113,9 +112,8 @@
     </div>
 
     <script>
-        // URL Cloudflare dan Secret Code anda
         const CF_WORKER_URL = 'https://ald-gateway.sainspdwater.workers.dev';
-        const SECRET_CODE = '2366211_URL';
+        // SECRET_CODE telah dibuang sepenuhnya dari sini
 
         const UIModule = {
             init() { this.cacheDOM(); this.bindEvents(); },
@@ -197,8 +195,7 @@
                     const response = await fetch(CF_WORKER_URL, {
                         method: 'POST',
                         headers: {
-                            'Content-Type': 'application/json',
-                            'X-Secret-Code': SECRET_CODE
+                            'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({ action: 'login', username: username, password: password })
                     });
@@ -222,10 +219,6 @@
                     return { success: true, token: response.data.token };
                 }
                 return { success: false };
-            },
-            logout() {
-                SessionModule.destroySession();
-                UIModule.showLoginView();
             }
         };
 
@@ -233,10 +226,6 @@
             createSession(token) {
                 sessionStorage.setItem('pd_water_auth_token', token);
                 sessionStorage.setItem('pd_water_login_time', Date.now().toString());
-            },
-            destroySession() {
-                sessionStorage.removeItem('pd_water_auth_token');
-                sessionStorage.removeItem('pd_water_login_time');
             },
             isAuthenticated() {
                 return !!sessionStorage.getItem('pd_water_auth_token');
