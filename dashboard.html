@@ -1052,7 +1052,7 @@
       if(btnIcon) btnIcon.classList.remove('fa-spin');
     }
 
-    // FUNGSI CETAK BORANG RASMI PDF DARI GOOGLE SHEET (TAB BORANG ALD)
+    // FUNGSI CETAK BORANG RASMI PDF DARI GOOGLE SHEET (VERSI ASAL MENGGUNAKAN res.pdfUrl)
     async function executePrint(uniqueNo) {
       const uNo = uniqueNo || document.getElementById('edit-uniqueNo').value;
       if (!uNo) {
@@ -1074,24 +1074,9 @@
         const res = await response.json();
         showLoading(false);
 
-        if (res.success && res.base64) {
-          const byteCharacters = atob(res.base64);
-          const byteNumbers = new Array(byteCharacters.length);
-          for (let i = 0; i < byteCharacters.length; i++) {
-            byteNumbers[i] = byteCharacters.charCodeAt(i);
-          }
-          const byteArray = new Uint8Array(byteNumbers);
-          const blob = new Blob([byteArray], { type: 'application/pdf' });
-          const blobUrl = URL.createObjectURL(blob);
-
-          const a = document.createElement('a');
-          a.href = blobUrl;
-          a.download = res.fileName || 'Borang_ALD.pdf';
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          
-          showToast('PDF berjaya dimuat turun sebagai ' + res.fileName, 'success');
+        if (res.success && res.pdfUrl) {
+          window.open(res.pdfUrl, '_blank');
+          showToast('Borang PDF berjaya disediakan untuk cetakan!', 'success');
         } else {
           showToast('Gagal menjana PDF: ' + (res.message || 'Ralat tidak diketahui'), 'danger');
         }
