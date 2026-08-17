@@ -452,48 +452,8 @@
 
   <!-- JAVASCRIPT LOGIC -->
   <script>
-    // 1. PENCEGAHAN BACK BUTTON & SEMAKAN SESI AWAL
-    window.addEventListener('pageshow', function(event) {
-        if (!sessionStorage.getItem('pd_water_auth_token')) {
-            window.location.replace('./index.html');
-        }
-    });
-
     if (!sessionStorage.getItem('pd_water_auth_token')) {
-        window.location.replace('./index.html');
-    }
-
-    // 2. IDLE TIMEOUT (15 Minit) & MAX SESSION (2 Jam)
-    const IDLE_TIMEOUT = 15 * 60 * 1000; // 15 Minit
-    const MAX_SESSION = 2 * 60 * 60 * 1000; // 2 Jam
-    let idleTimer;
-
-    function resetIdleTimer() {
-        clearTimeout(idleTimer);
-        idleTimer = setTimeout(() => {
-            alert("Sesi tamat kerana tidak aktif selama 15 minit.");
-            logout();
-        }, IDLE_TIMEOUT);
-    }
-
-    // Pantau aktiviti pengguna
-    document.addEventListener('mousemove', resetIdleTimer);
-    document.addEventListener('keydown', resetIdleTimer);
-    document.addEventListener('click', resetIdleTimer);
-
-    // Had Maksimum Sesi (2 Jam)
-    setTimeout(() => {
-        alert("Sesi maksimum 2 jam anda telah tamat.");
-        logout();
-    }, MAX_SESSION);
-
-    resetIdleTimer();
-
-    // 3. FUNGSI LOGOUT (Pembersihan & Redirect Selamat)
-    function logout() {
-      sessionStorage.removeItem('pd_water_auth_token');
-      sessionStorage.removeItem('pd_water_login_time');
-      window.location.replace('./index.html');
+        window.location.href = './index.html';
     }
 
     const CF_WORKER_URL = 'https://ald-gateway.sainspdwater.workers.dev';
@@ -518,6 +478,11 @@
       initEmptyComponents();
       loadData();
     });
+
+    function logout() {
+      sessionStorage.removeItem('pd_water_auth_token');
+      window.location.href = './index.html';
+    }
 
     function parseCoordinates(str) {
       if (str === null || str === undefined) return { coords: null };
@@ -1086,6 +1051,7 @@
       if(btnIcon) btnIcon.classList.remove('fa-spin');
     }
 
+    // FUNGSI CETAK / MUAT TURUN PDF YANG SESUAI UNTUK DESKTOP & TELEFON BIMBIT
     async function executePrint(uniqueNo) {
       const uNo = uniqueNo || document.getElementById('edit-uniqueNo').value;
       if (!uNo) {
@@ -1093,7 +1059,7 @@
         return;
       }
 
-      showLoading(true);
+      showLoading(true, "Menjana Borang PDF...");
       try {
         const response = await fetch(CF_WORKER_URL, {
           method: 'POST',
@@ -1108,8 +1074,17 @@
         showLoading(false);
 
         if (res.success && res.pdfUrl) {
-          window.open(res.pdfUrl, '_blank');
-          showToast('Borang PDF berjaya disediakan untuk cetakan!', 'success');
+          showToast('Borang PDF berjaya disediakan!', 'success');
+          
+          // Cipta pautan muat turun dinamik untuk menyokong peranti mudah alih (mobile)
+          const link = document.createElement('a');
+          link.href = res.pdfUrl;
+          link.target = '_blank';
+          link.download = `Borang_ALD_${uNo}.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+
         } else {
           showToast('Gagal menjana PDF: ' + (res.message || 'Ralat tidak diketahui'), 'danger');
         }
