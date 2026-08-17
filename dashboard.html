@@ -457,7 +457,6 @@
     }
 
     const CF_WORKER_URL = 'https://ald-gateway.sainspdwater.workers.dev';
-    // SECRET_CODE telah dibuang sepenuhnya
 
     let globalData = [];
     let filteredData = [];
@@ -1052,7 +1051,7 @@
       if(btnIcon) btnIcon.classList.remove('fa-spin');
     }
 
-    // FUNGSI CETAK BORANG RASMI PDF DARI GOOGLE SHEET (VERSI ASAL MENGGUNAKAN res.pdfUrl)
+    // FUNGSI CETAK BORANG RASMI PDF DINAMIK IKUT UNIQUE NO
     async function executePrint(uniqueNo) {
       const uNo = uniqueNo || document.getElementById('edit-uniqueNo').value;
       if (!uNo) {
