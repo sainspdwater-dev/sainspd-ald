@@ -71,6 +71,11 @@
                 <p class="text-sm text-red-400 font-medium">Username atau password tidak sah.</p>
             </div>
 
+            <div id="session-expired" class="hidden mb-6 p-4 bg-yellow-900/20 border border-yellow-500/30 rounded-lg flex items-center gap-3">
+                <i class="ph ph-clock text-yellow-400 text-lg"></i>
+                <p class="text-sm text-yellow-400 font-medium">Sesi anda telah tamat. Sila log masuk semula.</p>
+            </div>
+
             <form id="login-form" class="space-y-5">
                 <div>
                     <label for="username" class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-1.5">Username / User ID</label>
@@ -113,10 +118,14 @@
 
     <script>
         const CF_WORKER_URL = 'https://ald-gateway.sainspdwater.workers.dev';
-        // SECRET_CODE telah dibuang sepenuhnya dari sini
 
         const UIModule = {
-            init() { this.cacheDOM(); this.bindEvents(); },
+            init() { 
+                this.cacheDOM(); 
+                this.bindEvents(); 
+                this.checkSessionExpired();
+                this.preventBackNavigation();
+            },
             cacheDOM() {
                 this.form = document.getElementById('login-form');
                 this.usernameInput = document.getElementById('username');
@@ -127,6 +136,7 @@
                 this.btnText = document.getElementById('btn-text');
                 this.loadingSpinner = document.getElementById('loading-spinner');
                 this.errorMessage = document.getElementById('error-message');
+                this.sessionExpired = document.getElementById('session-expired');
                 this.loginView = document.getElementById('login-view');
             },
             bindEvents() {
@@ -134,6 +144,37 @@
                 this.form.addEventListener('submit', (e) => this.handleSubmit(e));
                 this.usernameInput.addEventListener('input', () => this.hideError());
                 this.passwordInput.addEventListener('input', () => this.hideError());
+            },
+            preventBackNavigation() {
+                // Push a new state to prevent going back to dashboard
+                history.pushState(null, null, location.href);
+                window.addEventListener('popstate', () => {
+                    // If user tries to go back, check if still on login page
+                    if (!this.isSessionActive()) {
+                        history.pushState(null, null, location.href);
+                    } else {
+                        // If somehow session is active, redirect to dashboard
+                        window.location.replace('./dashboard.html');
+                    }
+                });
+            },
+            checkSessionExpired() {
+                const params = new URLSearchParams(window.location.search);
+                if (params.get('expired') === 'true') {
+                    this.sessionExpired.classList.remove('hidden');
+                }
+                // Also clear any stale session
+                if (this.isSessionActive()) {
+                    // Check if session is expired
+                    const loginTime = parseInt(sessionStorage.getItem('pd_water_login_time'));
+                    if (loginTime && (Date.now() - loginTime) > 7200000) {
+                        SessionModule.clearSession();
+                        this.sessionExpired.classList.remove('hidden');
+                    }
+                }
+            },
+            isSessionActive() {
+                return !!sessionStorage.getItem('pd_water_auth_token');
             },
             togglePassword() {
                 const type = this.passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
@@ -157,12 +198,20 @@
                 this.form.classList.add('animate-bounce');
                 setTimeout(() => this.form.classList.remove('animate-bounce'), 300);
             },
-            hideError() { this.errorMessage.classList.add('hidden'); },
+            hideError() { 
+                this.errorMessage.classList.add('hidden');
+                this.sessionExpired.classList.add('hidden');
+            },
             showLoginView() {
                 this.loginView.classList.remove('hidden');
                 this.form.reset();
                 this.passwordInput.setAttribute('type', 'password');
                 this.eyeIcon.className = 'ph ph-eye text-lg';
+                this.hideError();
+                // Clear URL params
+                const url = new URL(window.location);
+                url.searchParams.delete('expired');
+                window.history.replaceState({}, document.title, url.toString());
             },
             async handleSubmit(e) {
                 e.preventDefault();
@@ -176,7 +225,8 @@
                     const authResult = await AuthModule.authenticate(username, password);
                     if (authResult.success) {
                         SessionModule.createSession(authResult.token);
-                        window.location.href = './dashboard.html';
+                        // Use replace to prevent back navigation
+                        window.location.replace('./dashboard.html');
                     } else {
                         this.showError();
                     }
@@ -228,14 +278,25 @@
                 sessionStorage.setItem('pd_water_login_time', Date.now().toString());
             },
             isAuthenticated() {
-                return !!sessionStorage.getItem('pd_water_auth_token');
+                const token = sessionStorage.getItem('pd_water_auth_token');
+                if (!token) return false;
+                const loginTime = parseInt(sessionStorage.getItem('pd_water_login_time'));
+                if (loginTime && (Date.now() - loginTime) > 7200000) {
+                    this.clearSession();
+                    return false;
+                }
+                return true;
+            },
+            clearSession() {
+                sessionStorage.removeItem('pd_water_auth_token');
+                sessionStorage.removeItem('pd_water_login_time');
             }
         };
 
         document.addEventListener('DOMContentLoaded', () => {
             UIModule.init();
             if (SessionModule.isAuthenticated()) {
-                window.location.href = './dashboard.html';
+                window.location.replace('./dashboard.html');
             } else {
                 UIModule.showLoginView();
             }
