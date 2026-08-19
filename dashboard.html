@@ -67,7 +67,7 @@
 <body class="flex flex-col h-screen overflow-hidden text-slate-800">
 
   <!-- LOADING OVERLAY -->
-  <div id="loadingOverlay" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex flex-col items-center justify-center transition-opacity duration-300">
+  <div id="loadingOverlay" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex flex-col items-center justify-center transition-opacity duration-300 hidden">
     <div class="bg-white p-6 rounded-2xl shadow-2xl flex items-center space-x-4">
       <div class="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
       <div>
@@ -452,11 +452,50 @@
 
   <!-- JAVASCRIPT LOGIC -->
   <script>
-    if (!sessionStorage.getItem('pd_water_auth_token')) {
-        window.location.href = './index.html';
-    }
+    // ============================================================
+    // SECURITY: Authentication Check & Session Management
+    // ============================================================
+    (function checkAuth() {
+        const token = sessionStorage.getItem('pd_water_auth_token');
+        if (!token) {
+            window.location.replace('./index.html?expired=true');
+            return;
+        }
+        
+        // Check session expiry (2 hours)
+        const loginTime = parseInt(sessionStorage.getItem('pd_water_login_time'));
+        if (loginTime && (Date.now() - loginTime) > 7200000) {
+            sessionStorage.removeItem('pd_water_auth_token');
+            sessionStorage.removeItem('pd_water_login_time');
+            window.location.replace('./index.html?expired=true');
+            return;
+        }
+    })();
 
+    // ============================================================
+    // SECURITY: Prevent Back Navigation After Logout
+    // ============================================================
+    (function preventBackNavigation() {
+        // Push initial state
+        history.pushState(null, null, location.href);
+        
+        window.addEventListener('popstate', function(event) {
+            const token = sessionStorage.getItem('pd_water_auth_token');
+            if (!token) {
+                // If no token, redirect to login
+                window.location.replace('./index.html?expired=true');
+            } else {
+                // If token exists, push state again to prevent going back
+                history.pushState(null, null, location.href);
+            }
+        });
+    })();
+
+    // ============================================================
+    // CONFIGURATION
+    // ============================================================
     const CF_WORKER_URL = 'https://ald-gateway.sainspdwater.workers.dev';
+    const SESSION_DURATION = 7200000; // 2 hours
 
     let globalData = [];
     let filteredData = [];
@@ -474,16 +513,132 @@
     const bulanOrder = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ogo", "Sep", "Okt", "Nov", "Dis"];
     const CHART_COLORS = ['#0056D2', '#2E7DFF', '#2E7D32', '#ED6C02', '#8B5CF6', '#EC4899', '#06B6D4', '#10B981', '#F59E0B', '#3B82F6'];
 
+    // ============================================================
+    // SESSION MANAGEMENT
+    // ============================================================
+    function checkSessionExpiry() {
+        const loginTime = parseInt(sessionStorage.getItem('pd_water_login_time'));
+        if (loginTime && (Date.now() - loginTime) > SESSION_DURATION) {
+            sessionStorage.removeItem('pd_water_auth_token');
+            sessionStorage.removeItem('pd_water_login_time');
+            window.location.replace('./index.html?expired=true');
+            return false;
+        }
+        return true;
+    }
+
+    function refreshSession() {
+        sessionStorage.setItem('pd_water_login_time', Date.now().toString());
+    }
+
+    async function secureFetch(url, options) {
+        if (!checkSessionExpiry()) {
+            throw new Error('Session expired');
+        }
+        refreshSession();
+        return fetch(url, options);
+    }
+
+    // ============================================================
+    // LOGOUT FUNCTION (Enhanced)
+    // ============================================================
+    function logout() {
+        // Clear session
+        sessionStorage.removeItem('pd_water_auth_token');
+        sessionStorage.removeItem('pd_water_login_time');
+        
+        // Stop polling
+        if (pollingInterval) {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+        }
+        
+        // Clear any cached data
+        globalData = [];
+        filteredData = [];
+        
+        // Use replace to prevent back button
+        window.location.replace('./index.html');
+    }
+
+    // ============================================================
+    // INITIALIZATION
+    // ============================================================
     $(document).ready(function() {
       initEmptyComponents();
       loadData();
     });
 
-    function logout() {
-      sessionStorage.removeItem('pd_water_auth_token');
-      window.location.href = './index.html';
+    // ============================================================
+    // DATA LOADING FUNCTIONS
+    // ============================================================
+    async function loadData() {
+      showLoading(true);
+      try {
+        const response = await secureFetch(CF_WORKER_URL, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json', 
+            'Authorization': 'Bearer ' + sessionStorage.getItem('pd_water_auth_token') 
+          },
+          body: JSON.stringify({ action: 'getData' })
+        });
+        const result = await response.json();
+        handleDataLoaded(result, false);
+      } catch (error) {
+        showLoading(false);
+        if (error.message === 'Session expired') {
+          window.location.replace('./index.html?expired=true');
+        } else {
+          showToast('Gagal memuatkan data: ' + error.message, 'danger');
+        }
+      }
     }
 
+    async function backgroundLoadData() {
+      try {
+        if (!checkSessionExpiry()) return;
+        const response = await secureFetch(CF_WORKER_URL, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json', 
+            'Authorization': 'Bearer ' + sessionStorage.getItem('pd_water_auth_token') 
+          },
+          body: JSON.stringify({ action: 'getData' })
+        });
+        const result = await response.json();
+        handleDataLoaded(result, true);
+      } catch (error) {}
+    }
+
+    function startSmartPolling() {
+      if (pollingInterval) clearInterval(pollingInterval);
+      pollingInterval = setInterval(async () => {
+        try {
+          if (!checkSessionExpiry()) {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+            return;
+          }
+          const response = await secureFetch(CF_WORKER_URL, {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json', 
+              'Authorization': 'Bearer ' + sessionStorage.getItem('pd_water_auth_token') 
+            },
+            body: JSON.stringify({ action: 'checkVersion' })
+          });
+          const result = await response.json();
+          if (result.success && result.version && result.version !== currentDataVersion && currentDataVersion !== "0") {
+             backgroundLoadData();
+          }
+        } catch (error) {}
+      }, 10000);
+    }
+
+    // ============================================================
+    // DATA HANDLING FUNCTIONS
+    // ============================================================
     function parseCoordinates(str) {
       if (str === null || str === undefined) return { coords: null };
       const trimmed = String(str).trim();
@@ -498,6 +653,63 @@
       return { coords: [lat, lng] };
     }
 
+    function handleDataLoaded(response, isSoftRefresh = false) {
+      if (!response.success) {
+        if (!isSoftRefresh) showLoading(false);
+        showToast('Ralat: ' + response.message, 'danger');
+        return;
+      }
+
+      if (response.version) currentDataVersion = response.version;
+      isLockEdit = response.lockEdit;
+      updateLockBadgeUI();
+
+      const rawData = response.data;
+      globalData = [];
+      for (let i = 0; i < rawData.length; i++) {
+        const r = rawData[i];
+        const uniqueNo = r[13];
+        if (uniqueNo) {
+          globalData.push({
+            tarikh: r[0] || '-', noAduan: r[1] || '-', dmaDmz: r[2] || '-', alamat: r[3] || '-',
+            kordinat: r[4] || '', maklumatKerosakan: r[5] || '-', maklumatKebocoran: r[6] || '-',
+            jenisPaip: r[7] || '-', saizPaip: r[8] || '-', dilaporkanOleh: r[9] || '-',
+            jenisPengesanan: r[10] || '-', zon: r[11] || '-', bulan: r[12] || '-', uniqueNo: r[13]
+          });
+        }
+      }
+
+      filteredData = [...globalData];
+
+      if (isSoftRefresh) {
+        const fZon = document.getElementById('filter-zon').value;
+        const fBulan = document.getElementById('filter-bulan').value;
+        const fPaip = document.getElementById('filter-paip').value;
+        const fLapor = document.getElementById('filter-lapor').value;
+        const fPengesanan = document.getElementById('filter-pengesanan').value;
+
+        populateFilters();
+        document.getElementById('filter-zon').value = fZon;
+        document.getElementById('filter-bulan').value = fBulan;
+        document.getElementById('filter-paip').value = fPaip;
+        document.getElementById('filter-lapor').value = fLapor;
+        document.getElementById('filter-pengesanan').value = fPengesanan;
+
+        applyFilters();
+        showToast('Data Berjaya Dikemaskini...', 'success');
+      } else {
+        populateFilters();
+        applyFilters();
+        showLoading(false);
+        startSmartPolling();
+      }
+
+      setTimeout(() => { if (mapInstance) mapInstance.invalidateSize(); }, 200);
+    }
+
+    // ============================================================
+    // UI FUNCTIONS
+    // ============================================================
     function initEmptyComponents() {
       chartsCache['chartBulan'] = createChartInstance('chartBulan', 'bar', false);
       chartsCache['chartPengesanan'] = createChartInstance('chartPengesanan', 'pie', false);
@@ -576,114 +788,6 @@
       mapInstance.addLayer(markerClusterGroup);
     }
 
-    async function loadData() {
-      showLoading(true);
-      try {
-        const response = await fetch(CF_WORKER_URL, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json', 
-            'Authorization': 'Bearer ' + sessionStorage.getItem('pd_water_auth_token') 
-          },
-          body: JSON.stringify({ action: 'getData' })
-        });
-        const result = await response.json();
-        handleDataLoaded(result, false);
-      } catch (error) {
-        showLoading(false);
-        showToast('Gagal memuatkan data: ' + error.message, 'danger');
-      }
-    }
-
-    async function backgroundLoadData() {
-      try {
-        const response = await fetch(CF_WORKER_URL, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json', 
-            'Authorization': 'Bearer ' + sessionStorage.getItem('pd_water_auth_token') 
-          },
-          body: JSON.stringify({ action: 'getData' })
-        });
-        const result = await response.json();
-        handleDataLoaded(result, true);
-      } catch (error) {}
-    }
-
-    function startSmartPolling() {
-      if (pollingInterval) clearInterval(pollingInterval);
-      pollingInterval = setInterval(async () => {
-        try {
-          const response = await fetch(CF_WORKER_URL, {
-            method: 'POST',
-            headers: { 
-              'Content-Type': 'application/json', 
-              'Authorization': 'Bearer ' + sessionStorage.getItem('pd_water_auth_token') 
-            },
-            body: JSON.stringify({ action: 'checkVersion' })
-          });
-          const result = await response.json();
-          if (result.success && result.version && result.version !== currentDataVersion && currentDataVersion !== "0") {
-             backgroundLoadData();
-          }
-        } catch (error) {}
-      }, 10000);
-    }
-
-    function handleDataLoaded(response, isSoftRefresh = false) {
-      if (!response.success) {
-        if (!isSoftRefresh) showLoading(false);
-        showToast('Ralat: ' + response.message, 'danger');
-        return;
-      }
-
-      if (response.version) currentDataVersion = response.version;
-      isLockEdit = response.lockEdit;
-      updateLockBadgeUI();
-
-      const rawData = response.data;
-      globalData = [];
-      for (let i = 0; i < rawData.length; i++) {
-        const r = rawData[i];
-        const uniqueNo = r[13];
-        if (uniqueNo) {
-          globalData.push({
-            tarikh: r[0] || '-', noAduan: r[1] || '-', dmaDmz: r[2] || '-', alamat: r[3] || '-',
-            kordinat: r[4] || '', maklumatKerosakan: r[5] || '-', maklumatKebocoran: r[6] || '-',
-            jenisPaip: r[7] || '-', saizPaip: r[8] || '-', dilaporkanOleh: r[9] || '-',
-            jenisPengesanan: r[10] || '-', zon: r[11] || '-', bulan: r[12] || '-', uniqueNo: r[13]
-          });
-        }
-      }
-
-      filteredData = [...globalData];
-
-      if (isSoftRefresh) {
-        const fZon = document.getElementById('filter-zon').value;
-        const fBulan = document.getElementById('filter-bulan').value;
-        const fPaip = document.getElementById('filter-paip').value;
-        const fLapor = document.getElementById('filter-lapor').value;
-        const fPengesanan = document.getElementById('filter-pengesanan').value;
-
-        populateFilters();
-        document.getElementById('filter-zon').value = fZon;
-        document.getElementById('filter-bulan').value = fBulan;
-        document.getElementById('filter-paip').value = fPaip;
-        document.getElementById('filter-lapor').value = fLapor;
-        document.getElementById('filter-pengesanan').value = fPengesanan;
-
-        applyFilters();
-        showToast('Data Berjaya Dikemaskini...', 'success');
-      } else {
-        populateFilters();
-        applyFilters();
-        showLoading(false);
-        startSmartPolling();
-      }
-
-      setTimeout(() => { if (mapInstance) mapInstance.invalidateSize(); }, 200);
-    }
-
     function escapeHtml(unsafe) {
       return (unsafe || "").toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
@@ -699,6 +803,9 @@
       }
     }
 
+    // ============================================================
+    // FILTER FUNCTIONS
+    // ============================================================
     let searchTimeout = null;
     function debouncedSearch() {
       clearTimeout(searchTimeout);
@@ -823,6 +930,9 @@
       }
     }
 
+    // ============================================================
+    // RENDER FUNCTIONS
+    // ============================================================
     function renderDashboard() {
       updateKPIs();
       updateCharts();
@@ -929,6 +1039,9 @@
       if (dtRumusan) dtRumusan.clear().rows.add(filteredData).draw(false);
     }
 
+    // ============================================================
+    // EDIT FUNCTIONS
+    // ============================================================
     function openEditModal(uniqueNo) {
       const item = globalData.find(d => d.uniqueNo === uniqueNo);
       if (!item) return showToast('Rekod tidak dijumpai.', 'danger');
@@ -988,7 +1101,11 @@
       closeEditModal();
 
       try {
-        const response = await fetch(CF_WORKER_URL, {
+        if (!checkSessionExpiry()) {
+          window.location.replace('./index.html?expired=true');
+          return;
+        }
+        const response = await secureFetch(CF_WORKER_URL, {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json', 
@@ -1006,10 +1123,70 @@
         }
       } catch (err) {
         showLoading(false);
-        showToast('Kemaskini gagal: ' + err.message, 'danger');
+        if (err.message === 'Session expired') {
+          window.location.replace('./index.html?expired=true');
+        } else {
+          showToast('Kemaskini gagal: ' + err.message, 'danger');
+        }
       }
     }
 
+    // ============================================================
+    // PRINT FUNCTION
+    // ============================================================
+    async function executePrint(uniqueNo) {
+      const uNo = uniqueNo || document.getElementById('edit-uniqueNo').value;
+      if (!uNo) {
+        showToast('Sila pilih atau buka rekod untuk dicetak.', 'danger');
+        return;
+      }
+
+      if (!checkSessionExpiry()) {
+        window.location.replace('./index.html?expired=true');
+        return;
+      }
+
+      showLoading(true, "Menjana Borang PDF...");
+      try {
+        const response = await secureFetch(CF_WORKER_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + sessionStorage.getItem('pd_water_auth_token')
+          },
+          body: JSON.stringify({ action: 'generatePDF', uniqueNo: uNo })
+        });
+        
+        const res = await response.json();
+        showLoading(false);
+
+        if (res.success && res.pdfUrl) {
+          showToast('Borang PDF berjaya disediakan!', 'success');
+          
+          const link = document.createElement('a');
+          link.href = res.pdfUrl;
+          link.target = '_blank';
+          link.download = `Borang_ALD_${uNo}.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+
+        } else {
+          showToast('Gagal menjana PDF: ' + (res.message || 'Ralat tidak diketahui'), 'danger');
+        }
+      } catch (err) {
+        showLoading(false);
+        if (err.message === 'Session expired') {
+          window.location.replace('./index.html?expired=true');
+        } else {
+          showToast('Ralat sambungan: ' + err.message, 'danger');
+        }
+      }
+    }
+
+    // ============================================================
+    // NAVIGATION & UTILITY FUNCTIONS
+    // ============================================================
     function switchTab(tabName) {
       document.querySelectorAll('header nav button:not(#nav-logout)').forEach(btn => {
         btn.classList.remove('active', 'bg-primary', 'text-white');
@@ -1032,7 +1209,16 @@
       }
     }
 
-    function showLoading(show) { document.getElementById('loadingOverlay').classList.toggle('hidden', !show); }
+    function showLoading(show, message = "Loading...") {
+      const overlay = document.getElementById('loadingOverlay');
+      if (show) {
+        overlay.classList.remove('hidden');
+        const msgEl = overlay.querySelector('p');
+        if (msgEl) msgEl.textContent = message;
+      } else {
+        overlay.classList.add('hidden');
+      }
+    }
 
     let toastTimer = null;
     function showToast(message, type = 'success') {
@@ -1049,49 +1235,6 @@
       if(btnIcon) btnIcon.classList.add('fa-spin');
       await loadData();
       if(btnIcon) btnIcon.classList.remove('fa-spin');
-    }
-
-    // FUNGSI CETAK / MUAT TURUN PDF YANG SESUAI UNTUK DESKTOP & TELEFON BIMBIT
-    async function executePrint(uniqueNo) {
-      const uNo = uniqueNo || document.getElementById('edit-uniqueNo').value;
-      if (!uNo) {
-        showToast('Sila pilih atau buka rekod untuk dicetak.', 'danger');
-        return;
-      }
-
-      showLoading(true, "Menjana Borang PDF...");
-      try {
-        const response = await fetch(CF_WORKER_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + sessionStorage.getItem('pd_water_auth_token')
-          },
-          body: JSON.stringify({ action: 'generatePDF', uniqueNo: uNo })
-        });
-        
-        const res = await response.json();
-        showLoading(false);
-
-        if (res.success && res.pdfUrl) {
-          showToast('Borang PDF berjaya disediakan!', 'success');
-          
-          // Cipta pautan muat turun dinamik untuk menyokong peranti mudah alih (mobile)
-          const link = document.createElement('a');
-          link.href = res.pdfUrl;
-          link.target = '_blank';
-          link.download = `Borang_ALD_${uNo}.pdf`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-
-        } else {
-          showToast('Gagal menjana PDF: ' + (res.message || 'Ralat tidak diketahui'), 'danger');
-        }
-      } catch (err) {
-        showLoading(false);
-        showToast('Ralat sambungan: ' + err.message, 'danger');
-      }
     }
   </script>
 </body>
