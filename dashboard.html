@@ -1229,7 +1229,6 @@
         htmlTemplate = htmlTemplate.replace(/\{\{TICK_[^}]+\}\}/g, '');
         htmlTemplate = htmlTemplate.replace(/\{\{MAKLUMAT_[^}]+\}\}/g, '');
 
-        // Override CSS asal untuk memastikan paparan kemas
         const overrideCSS = `
         <style>
             @page { size: a4 portrait; margin: 5mm; }
@@ -1237,7 +1236,6 @@
             #print-preview-content *, table td, table th, span, div { color: #000000 !important; }
             body { background: white !important; margin: 0 !important; padding: 0 !important; }
             
-            /* Bekas utama dengan kawalan rujukan logo & page break */
             #print-preview-content {
                 position: relative !important;
                 width: 100% !important;
@@ -1250,7 +1248,6 @@
                 break-inside: avoid !important;
             }
             
-            /* Kawalan jadual agar kekal dalam 1 muka surat */
             #print-preview-content table {
                 width: 100% !important;
                 max-width: 100% !important;
@@ -1261,6 +1258,10 @@
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
             }
+            
+            #print-preview-content col { width: auto !important; }
+            td { padding: 0.5px 1px !important; }
+        </style>`;
             
             #print-preview-content col { width: auto !important; }
             td { padding: 0.5px 1px !important; }
