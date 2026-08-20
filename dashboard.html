@@ -1168,14 +1168,12 @@
       showLoading(true, "Menjana Pratonton Cetakan...");
 
       try {
-        // Pautan Raw GitHub untuk repositori borangald anda
         const GITHUB_RAW_URL = 'https://raw.githubusercontent.com/sainspdwater-dev/borangald/main/';
         
         const borangRes = await fetch(GITHUB_RAW_URL + 'BorangALD.htm');
         if (!borangRes.ok) throw new Error('Gagal memuat turun templat BorangALD.htm dari GitHub');
         let htmlTemplate = await borangRes.text();
 
-        // Ganti rujukan imej ke direktori root GITHUB_RAW_URL
         htmlTemplate = htmlTemplate.replace(/BorangALD_files\//g, GITHUB_RAW_URL);
 
         const kerosakan = String(item.maklumatKerosakan || '').toUpperCase();
@@ -1193,7 +1191,7 @@
           "{{SAIZ_PAIP}}": item.saizPaip !== '-' ? item.saizPaip : '',
           "{{DILAPORKAN_OLEH}}": item.dilaporkanOleh !== '-' ? item.dilaporkanOleh : '',
           
-          // Logik Checkbox (Dibersihkan sepenuhnya dari sisa teks maklumatKerosakan)
+          // Logik Checkbox Berdasarkan Data Kerosakan & Kebocoran
           "{{TICK_FLOWMETER}}": kerosakan.includes('FLOWMETER') ? '✔' : '',
           "{{TICK_PRESSURE REDUCING VALVE (PRV)}}": (kerosakan.includes('PRV') || kerosakan.includes('PRESSURE')) ? '✔' : '',
           "{{TICK_KEBOCORAN ATAU PECAH}}": (kerosakan.includes('BOCOR') || kerosakan.includes('PECAH')) ? '✔' : '',
@@ -1201,6 +1199,7 @@
           "{{TICK_SAMBUNGAN HARAM}}": kerosakan.includes('HARAM') ? '✔' : '',
           "{{TICK_LIMPAHAN KOLAM/TANGKI}}": (kerosakan.includes('LIMPAHAN') || kerosakan.includes('TANGKI')) ? '✔' : '',
           "{{TICK_METER PENGGUNA}}": kerosakan.includes('METER PENGGUNA') ? '✔' : '',
+          
           "{{TICK_BULKMETER}}": bocor.includes('BULK') ? '✔' : '',
           "{{TICK_METER STAND}}": bocor.includes('STAND') ? '✔' : '',
           "{{TICK_Injap Rosak}}": (bocor.includes('SLUICE') || bocor.includes('INJAP') || bocor.includes('INJAP ROSAK')) ? '✔' : '',
@@ -1212,9 +1211,8 @@
           htmlTemplate = htmlTemplate.split(tag).join(value);
         }
 
+        // Buang kesemua placeholder tag yang tidak terpakai & sisa perkataan Excel
         htmlTemplate = htmlTemplate.replace(/\{\{[^}]+\}\}/g, '');
-
-        // Bersihkan sebarang teks 'maklumatKerosakan' atau 'MaklumatKebocoran/Pecah' yang tertinggal daripada eksport Excel lama
         htmlTemplate = htmlTemplate.replace(/maklumatKerosakan/g, '');
         htmlTemplate = htmlTemplate.replace(/MaklumatKebocoran\/Pecah/g, '');
 
@@ -1276,7 +1274,7 @@
           filename:     `Borang_ALD_${window.currentPrintUniqueNo}.pdf`,
           image:        { type: 'jpeg', quality: 0.98 },
           html2canvas:  { 
-              scale: 2, 
+              scale: 1.5, 
               useCORS: true, 
               scrollY: 0,
               backgroundColor: '#ffffff'
