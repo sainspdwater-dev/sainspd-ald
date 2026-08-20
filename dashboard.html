@@ -1232,11 +1232,12 @@
         // Override CSS asal untuk memastikan paparan kemas
         const overrideCSS = `
         <style>
+            @page { size: a4 portrait; margin: 5mm; }
             v\\:shape, .shape, o\\:p { display: none !important; }
             #print-preview-content *, table td, table th, span, div { color: #000000 !important; }
             body { background: white !important; margin: 0 !important; padding: 0 !important; }
             
-            /* Tetapkan rujukan relatif supaya logo absolute tidak terkeluar/hilang */
+            /* Bekas utama dengan kawalan rujukan logo & page break */
             #print-preview-content {
                 position: relative !important;
                 width: 100% !important;
@@ -1244,8 +1245,12 @@
                 margin: 0 auto !important;
                 padding: 5px !important;
                 box-sizing: border-box !important;
+                page-break-after: avoid !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
             }
             
+            /* Kawalan jadual agar kekal dalam 1 muka surat */
             #print-preview-content table {
                 width: 100% !important;
                 max-width: 100% !important;
@@ -1253,10 +1258,12 @@
                 margin: 0 auto !important;
                 font-size: 5.8pt !important;
                 line-height: 1.02 !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
             }
             
             #print-preview-content col { width: auto !important; }
-            td { padding: 0.5px 2px !important; }
+            td { padding: 0.5px 1px !important; }
         </style>`;
             
             /* Paksa jadual Excel mengikut saiz bekas & buang sifat fixed width */
