@@ -448,7 +448,7 @@
         </div>
 
         <!-- Modal Body (Preview Canvas) -->
-        <div class="p-6 overflow-y-auto flex-1 flex justify-center bg-gray-200">
+        <div class="p-6 overflow-y-auto flex-1 flex justify-center bg-white">
             <div id="print-preview-content" class="bg-white shadow-xl w-fit min-w-[750px] p-8">
                 <!-- BorangALD.htm akan dimuatkan di sini dari GitHub -->
             </div>
@@ -1199,7 +1199,7 @@
           htmlTemplate = htmlTemplate.replace(regexTag, value);
         }
 
-        // 2. Pemetaan Checkbox / Ticks Tepat Mengikut Templat Raw Borang
+        // 2. Pemetaan Checkbox / Ticks Tepat Mengikut Templat Raw Borang[cite: 8]
         const tickMapping = {
           "FLOWMETER": kerosakan.includes('FLOWMETER'),
           "PRESSURE REDUCING VALVE (PRV)": (kerosakan.includes('PRV') || kerosakan.includes('PRESSURE') || kerosakan.includes('REDUCING')),
@@ -1229,36 +1229,21 @@
         htmlTemplate = htmlTemplate.replace(/\{\{TICK_[^}]+\}\}/g, '');
         htmlTemplate = htmlTemplate.replace(/\{\{MAKLUMAT_[^}]+\}\}/g, '');
 
-        // Menggunakan string biasa dengan petik dua (" ") untuk mengelakkan ralat backtick
-        const overrideCSS = "<style>\n" +
-            "@page { size: a4 portrait; margin: 5mm; }\n" +
-            "v\\\\:shape, .shape, o\\\\:p { display: none !important; }\n" +
-            "#print-preview-content *, table td, table th, span, div { color: #000000 !important; }\n" +
-            "body { background: white !important; margin: 0 !important; padding: 0 !important; }\n" +
-            "#print-preview-content {\n" +
-            "    position: relative !important;\n" +
-            "    width: 100% !important;\n" +
-            "    max-width: 680px !important;\n" +
-            "    margin: 0 auto !important;\n" +
-            "    padding: 5px !important;\n" +
-            "    box-sizing: border-box !important;\n" +
-            "    page-break-after: avoid !important;\n" +
-            "    page-break-inside: avoid !important;\n" +
-            "    break-inside: avoid !important;\n" +
-            "}\n" +
-            "#print-preview-content table {\n" +
-            "    width: 100% !important;\n" +
-            "    max-width: 100% !important;\n" +
-            "    table-layout: auto !important;\n" +
-            "    margin: 0 auto !important;\n" +
-            "    font-size: 5.8pt !important;\n" +
-            "    line-height: 1.02 !important;\n" +
-            "    page-break-inside: avoid !important;\n" +
-            "    break-inside: avoid !important;\n" +
-            "}\n" +
-            "#print-preview-content col { width: auto !important; }\n" +
-            "td { padding: 0.5px 1px !important; }\n" +
-            "</style>";
+        // Override CSS asal untuk memastikan paparan kemas
+        const overrideCSS = `
+        <style>
+            v\\:shape, .shape, o\\:p { display: none !important; }
+            #print-preview-content img {
+                position: static !important; top: auto !important; left: auto !important;
+                transform: none !important; float: none !important;
+                max-height: 28px !important; display: inline-block !important; margin: 0 !important;
+            }
+            #print-preview-content *, table td, table th, span, div { color: #000000 !important; }
+            body { background: white !important; margin: 0 !important; padding: 0 !important; }
+            table { width: 100% !important; max-width: 100% !important; font-size: 6.5pt !important; line-height: 1.1 !important; }
+            tr { height: auto !important; }
+            td { padding: 1px 2px !important; }
+        </style>`;
         
         htmlTemplate = htmlTemplate.replace('</head>', overrideCSS + '</head>');
         document.getElementById('print-preview-content').innerHTML = htmlTemplate;
@@ -1284,6 +1269,43 @@
         showToast('Ralat memuat turun borang: ' + err.message, 'danger');
       }
     }
+
+    function closePrintModal() {
+      document.getElementById('printModal').classList.add('hidden');
+      setTimeout(() => { document.getElementById('print-preview-content').innerHTML = ''; }, 300);
+    }
+
+    function downloadPDF() {
+      showLoading(true, "Menjana PDF Berkualiti Tinggi...");
+      const element = document.getElementById('print-preview-content');
+      
+      const originalShadow = element.style.boxShadow;
+      element.style.boxShadow = 'none';
+      
+      const opt = {
+          margin:       [0.1, 0.1, 0.1, 0.1], 
+          filename:     `Borang_ALD_${window.currentPrintUniqueNo}.pdf`,
+          image:        { type: 'jpeg', quality: 0.98 },
+          html2canvas:  { 
+              scale: 1.5, 
+              useCORS: true, 
+              scrollY: 0,
+              backgroundColor: '#ffffff'
+          },
+          jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+      };
+
+      html2pdf().set(opt).from(element).save().then(() => {
+          element.style.boxShadow = originalShadow;
+          showLoading(false);
+          showToast('PDF berjaya dimuat turun!', 'success');
+      }).catch((err) => {
+          element.style.boxShadow = originalShadow;
+          showLoading(false);
+          showToast('Gagal menjana PDF', 'danger');
+      });
+    }
+
     // ============================================================
     // NAVIGATION & UTILITY FUNCTIONS
     // ============================================================
