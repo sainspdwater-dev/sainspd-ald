@@ -1191,7 +1191,7 @@
           "{{SAIZ_PAIP}}": item.saizPaip !== '-' ? item.saizPaip : '',
           "{{DILAPORKAN_OLEH}}": item.dilaporkanOleh !== '-' ? item.dilaporkanOleh : '',
           
-          // Logik Checkbox Berdasarkan Data Kerosakan & Kebocoran
+          // Logik Checkbox Berdasarkan Data (Tanpa sebarang koma atau tanda soal)
           "{{TICK_FLOWMETER}}": kerosakan.includes('FLOWMETER') ? '✔' : '',
           "{{TICK_PRESSURE REDUCING VALVE (PRV)}}": (kerosakan.includes('PRV') || kerosakan.includes('PRESSURE')) ? '✔' : '',
           "{{TICK_KEBOCORAN ATAU PECAH}}": (kerosakan.includes('BOCOR') || kerosakan.includes('PECAH')) ? '✔' : '',
