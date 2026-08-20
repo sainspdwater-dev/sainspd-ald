@@ -1171,7 +1171,7 @@
         // [!] Sila pastikan URL ini merujuk kepada RAW link direktori GitHub anda yang mengandungi borang.htm & folder BorangALD_files
         const GITHUB_RAW_URL = 'https://raw.githubusercontent.com/sainspdwater-dev/borangald/refs/heads/main/';
         
-        const borangRes = await fetch(GITHUB_RAW_URL + 'borang.htm');
+        const borangRes = await fetch(GITHUB_RAW_URL + 'BorangALD');
         if (!borangRes.ok) throw new Error('Gagal memuat turun templat borang.htm dari GitHub');
         let htmlTemplate = await borangRes.text();
 
