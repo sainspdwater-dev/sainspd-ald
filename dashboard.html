@@ -1193,7 +1193,7 @@
           "{{SAIZ_PAIP}}": item.saizPaip !== '-' ? item.saizPaip : '',
           "{{DILAPORKAN_OLEH}}": item.dilaporkanOleh !== '-' ? item.dilaporkanOleh : '',
           
-          // Logik Checkbox 
+          // Logik Checkbox (Dibersihkan sepenuhnya dari sisa teks maklumatKerosakan)
           "{{TICK_FLOWMETER}}": kerosakan.includes('FLOWMETER') ? '✔' : '',
           "{{TICK_PRESSURE REDUCING VALVE (PRV)}}": (kerosakan.includes('PRV') || kerosakan.includes('PRESSURE')) ? '✔' : '',
           "{{TICK_KEBOCORAN ATAU PECAH}}": (kerosakan.includes('BOCOR') || kerosakan.includes('PECAH')) ? '✔' : '',
@@ -1213,6 +1213,10 @@
         }
 
         htmlTemplate = htmlTemplate.replace(/\{\{[^}]+\}\}/g, '');
+
+        // Bersihkan sebarang teks 'maklumatKerosakan' atau 'MaklumatKebocoran/Pecah' yang tertinggal daripada eksport Excel lama
+        htmlTemplate = htmlTemplate.replace(/maklumatKerosakan/g, '');
+        htmlTemplate = htmlTemplate.replace(/MaklumatKebocoran\/Pecah/g, '');
 
         // Override CSS untuk memastikan susun atur stabil dan logo Excel dikunci posisinya
         const overrideCSS = `
