@@ -1176,6 +1176,7 @@
 
         htmlTemplate = htmlTemplate.replace(/BorangALD_files\//g, GITHUB_RAW_URL);
 
+        // Normalisasi teks data kerosakan dan kebocoran
         const kerosakan = String(item.maklumatKerosakan || '').toUpperCase();
         const bocor = String(item.maklumatKebocoran || '').toUpperCase();
 
@@ -1185,41 +1186,52 @@
           "{{DMA_DMZ}}": item.dmaDmz !== '-' ? item.dmaDmz : '',
           "{{ALAMAT}}": item.alamat !== '-' ? item.alamat : '',
           "{{KORDINAT}}": item.kordinat !== '-' ? item.kordinat : '',
-          "{{MAKLUMAT_KEROSAKAN}}": item.maklumatKebocoran !== '-' ? item.maklumatKebocoran : '',
+          "{{MAKLUMAT_KEROSAKAN}}": item.maklumatKerosakan !== '-' ? item.maklumatKerosakan : '',
           "{{MAKLUMAT_KEBOCORAN/PECAH}}": item.maklumatKebocoran !== '-' ? item.maklumatKebocoran : '',
           "{{JENIS_PAIP}}": item.jenisPaip !== '-' ? item.jenisPaip : '',
           "{{SAIZ_PAIP}}": item.saizPaip !== '-' ? item.saizPaip : '',
-          "{{DILAPORKAN_OLEH}}": item.dilaporkanOleh !== '-' ? item.dilaporkanOleh : '',
-          
-          // Logik Checkbox Berdasarkan Data (Tanpa sebarang koma atau tanda soal)
-          "{{TICK_FLOWMETER}}": kerosakan.includes('FLOWMETER') ? '✔' : '',
-          "{{TICK_PRESSURE REDUCING VALVE (PRV)}}": (kerosakan.includes('PRV') || kerosakan.includes('PRESSURE')) ? '✔' : '',
-          "{{TICK_KEBOCORAN ATAU PECAH}}": (kerosakan.includes('BOCOR') || kerosakan.includes('PECAH')) ? '✔' : '',
-          "{{TICK_ALTITUDE VALVE}}": kerosakan.includes('ALTITUDE') ? '✔' : '',
-          "{{TICK_SAMBUNGAN HARAM}}": kerosakan.includes('HARAM') ? '✔' : '',
-          "{{TICK_LIMPAHAN KOLAM/TANGKI}}": (kerosakan.includes('LIMPAHAN') || kerosakan.includes('TANGKI')) ? '✔' : '',
-          "{{TICK_METER PENGGUNA}}": kerosakan.includes('METER PENGGUNA') ? '✔' : '',
-          
-          "{{TICK_BULKMETER}}": bocor.includes('BULK') ? '✔' : '',
-          "{{TICK_METER STAND}}": bocor.includes('STAND') ? '✔' : '',
-          "{{TICK_Injap Rosak}}": (bocor.includes('SLUICE') || bocor.includes('INJAP') || bocor.includes('INJAP ROSAK')) ? '✔' : '',
-          "{{TICK_PAIP PERHUBUNGAN}}": (bocor.includes('HUBUNGAN') || bocor.includes('PAIP PERHUBUNGAN')) ? '✔' : '',
-          "{{TICK_Paip Pecah,Paip Bocor}}": (bocor.includes('UTAMA') || bocor.includes('PAIP PECAH') || bocor.includes('PAIP BOCOR')) ? '✔' : ''
+          "{{DILAPORKAN_OLEH}}": item.dilaporkanOleh !== '-' ? item.dilaporkanOleh : ''
         };
 
+        // 1. Ganti teks asas satu baris
         for (const [tag, value] of Object.entries(replacements)) {
           htmlTemplate = htmlTemplate.split(tag).join(value);
         }
 
-        // Buang kesemua placeholder tag yang tidak terpakai & sisa perkataan Excel
-        htmlTemplate = htmlTemplate.replace(/\{\{[^}]+\}\}/g, '');
-        htmlTemplate = htmlTemplate.replace(/maklumatKerosakan/g, '');
-        htmlTemplate = htmlTemplate.replace(/MaklumatKebocoran\/Pecah/g, '');
+        // 2. Logik Checkbox Maklumat Kerosakan (Menyokong pecahan baris dari Excel)
+        const tickMapping = {
+          "FLOWMETER": kerosakan.includes('FLOWMETER'),
+          "PRESSURE REDUCING": (kerosakan.includes('PRV') || kerosakan.includes('PRESSURE') || kerosakan.includes('REDUCING')),
+          "KEBOCORAN\n  ATAU PECAH": (kerosakan.includes('BOCOR') || kerosakan.includes('PECAH')),
+          "ALTITUDE VALVE": kerosakan.includes('ALTITUDE'),
+          "SAMBUNGAN\n  HARAM": kerosakan.includes('HARAM'),
+          "LIMPAHAN\n  KOLAM/TANGKI": (kerosakan.includes('LIMPAHAN') || kerosakan.includes('TANGKI')),
+          "METER\n  PENGGUNA": kerosakan.includes('METER PENGGUNA'),
+          
+          // Maklumat Kebocoran / Pecah
+          "BULKMETER": bocor.includes('BULK'),
+          "METER STAND": bocor.includes('STAND'),
+          "Injap Rosak": (bocor.includes('SLUICE') || bocor.includes('INJAP') || bocor.includes('ROSAK')),
+          "PAIP PERHUBUNGAN": (bocor.includes('HUBUNGAN') || bocor.includes('PERHUBUNGAN')),
+          "Paip Pecah,Paip\n  Bocor": (bocor.includes('UTAMA') || bocor.includes('PECAH') || bocor.includes('BOCOR'))
+        };
 
-        // Override CSS untuk memastikan susun atur stabil dan logo Excel dikunci posisinya
+        // Gantikan tag TICK secara dinamik dengan regex yang mengabaikan line-break ruang kosong Excel
+        for (const [key, isChecked] of Object.entries(tickMapping)) {
+          const mark = isChecked ? '✔' : '';
+          const escapedKey = key.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&').replace(/\s+/g, '\\s+');
+          const regexTag = new RegExp(`\\{\\{\\s*TICK_${escapedKey}\\s*\\}\\}`, 'g');
+          htmlTemplate = htmlTemplate.replace(regexTag, mark);
+        }
+
+        // Bersihkan sebarang baki tag TICK atau maklumat yang tidak terpakai
+        htmlTemplate = htmlTemplate.replace(/\{\{TICK_[^}]+\}\}/g, '');
+        htmlTemplate = htmlTemplate.replace(/\{\{MAKLUMAT_[^}]+\}\}/g, '');
+
+        // Override CSS untuk memastikan paparan kemas dan stabil dalam PDF
         const overrideCSS = `
         <style>
-            v\\:shape, .shape { display: none !important; }
+            v\\:shape, .shape, o\\:p { display: none !important; }
             #print-preview-content img {
                 position: static !important; top: auto !important; left: auto !important;
                 transform: none !important; float: none !important;
