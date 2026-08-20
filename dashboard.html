@@ -1176,11 +1176,11 @@
 
         htmlTemplate = htmlTemplate.replace(/BorangALD_files\//g, GITHUB_RAW_URL);
 
-        // Normalisasi teks untuk carian checkbox
+        // Normalisasi teks untuk carian checkbox & teks
         const kerosakan = String(item.maklumatKerosakan || '').toUpperCase();
         const bocor = String(item.maklumatKebocoran || '').toUpperCase();
 
-        // Pemetaan Placeholder Baharu (Mengambil dari kolum Maklumat Kebocoran dan Saiz Paip)
+        // Replacements placeholder utama
         const replacements = {
           "{{MAKLUMAT_KEBOCORAN}}": item.maklumatKebocoran !== '-' ? item.maklumatKebocoran : '',
           "{{SAIZ_PAIP}}": item.saizPaip !== '-' ? item.saizPaip : '',
@@ -1192,16 +1192,37 @@
           htmlTemplate = htmlTemplate.split(tag).join(value);
         }
 
-        // Logik Checkbox berasaskan nilai kebocoran/kerosakan
+        // Logik Checkbox komprehensif (menyokong format jarak & garis bawah)
         const tickMapping = {
+          "FLOWMETER": kerosakan.includes('FLOWMETER'),
+          "PRESSURE REDUCING": (kerosakan.includes('PRV') || kerosakan.includes('PRESSURE') || kerosakan.includes('REDUCING')),
+          "PRESSURE_REDUCING": (kerosakan.includes('PRV') || kerosakan.includes('PRESSURE') || kerosakan.includes('REDUCING')),
+          "KEBOCORAN ATAU PECAH": (kerosakan.includes('BOCOR') || kerosakan.includes('PECAH')),
+          "ALTITUDE VALVE": kerosakan.includes('ALTITUDE'),
+          "ALTITUDE_VALVE": kerosakan.includes('ALTITUDE'),
+          "SAMBUNGAN HARAM": kerosakan.includes('HARAM'),
+          "SAMBUNGAN_HARAM": kerosakan.includes('HARAM'),
+          "LIMPAHAN KOLAM/TANGKI": (kerosakan.includes('LIMPAHAN') || kerosakan.includes('TANGKI')),
+          "METER PENGGUNA": kerosakan.includes('METER PENGGUNA'),
+          
+          "BULKMETER": bocor.includes('BULK'),
+          "METER STAND": (bocor.includes('STAND') || kerosakan.includes('STAND')),
           "METER_STAND": (bocor.includes('STAND') || kerosakan.includes('STAND')),
-          "AIR_VALVE": (bocor.includes('AIR VALVE') || bocor.includes('INJAP ANGIN') || kerosakan.includes('AIR VALVE') || kerosakan.includes('INJAP ANGIN')),
-          "METER_INDIVIDU": (bocor.includes('INDIVIDU') || kerosakan.includes('INDIVIDU'))
+          "AIR VALVE": (bocor.includes('AIR VALVE') || bocor.includes('INJAP ANGIN')),
+          "AIR_VALVE": (bocor.includes('AIR VALVE') || bocor.includes('INJAP ANGIN')),
+          "METER INDIVIDU": (bocor.includes('INDIVIDU') || kerosakan.includes('INDIVIDU')),
+          "METER_INDIVIDU": (bocor.includes('INDIVIDU') || kerosakan.includes('INDIVIDU')),
+          "Injap Rosak": (bocor.includes('SLUICE') || bocor.includes('INJAP') || bocor.includes('ROSAK')),
+          "INJAP_ROSAK": (bocor.includes('SLUICE') || bocor.includes('INJAP') || bocor.includes('ROSAK')),
+          "PAIP PERHUBUNGAN": (bocor.includes('HUBUNGAN') || bocor.includes('PERHUBUNGAN')),
+          "PAIP_PERHUBUNGAN": (bocor.includes('HUBUNGAN') || bocor.includes('PERHUBUNGAN')),
+          "Paip Pecah,Paip Bocor": (bocor.includes('UTAMA') || bocor.includes('PECAH') || bocor.includes('BOCOR'))
         };
 
         for (const [key, isChecked] of Object.entries(tickMapping)) {
           const mark = isChecked ? '✔' : '';
-          const regexTag = new RegExp(`\\{\\{\\s*TICK_${key}\\s*\\}\\}`, 'g');
+          const escapedKey = key.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&').replace(/\s+/g, '\\s*');
+          const regexTag = new RegExp(`\\{\\{\\s*TICK_${escapedKey}\\s*\\}\\}`, 'g');
           htmlTemplate = htmlTemplate.replace(regexTag, mark);
         }
 
@@ -1211,18 +1232,18 @@
         htmlTemplate = htmlTemplate.replace(/\{\{SAIZ_PAIP[^}]+\}\}/g, '');
         htmlTemplate = htmlTemplate.replace(/\{\{LAIN_LAIN_ADUAN_[^}]+\}\}/g, '');
 
-        // Override CSS untuk memastikan paparan kemas dan stabil dalam PDF
+        // Override CSS yang dioptimumkan untuk muat tepat 1 mukasurat A4
         const overrideCSS = `
         <style>
             v\\:shape, .shape, o\\:p { display: none !important; }
             #print-preview-content img {
                 position: static !important; top: auto !important; left: auto !important;
                 transform: none !important; float: none !important;
-                max-height: 28px !important; display: inline-block !important; margin: 0 !important;
+                max-height: 24px !important; display: inline-block !important; margin: 0 !important;
             }
             #print-preview-content *, table td, table th, span, div { color: #000000 !important; }
             body { background: white !important; margin: 0 !important; padding: 0 !important; }
-            table { width: 100% !important; max-width: 100% !important; font-size: 7.5pt !important; line-height: 1.1 !important; }
+            table { width: 100% !important; max-width: 100% !important; font-size: 7pt !important; line-height: 1.0 !important; }
             tr { height: auto !important; }
             td { padding: 1px 2px !important; }
         </style>`;
@@ -1265,11 +1286,11 @@
       element.style.boxShadow = 'none';
       
       const opt = {
-          margin:       [0.1, 0.1, 0.1, 0.1], 
+          margin:       [0.05, 0.05, 0.05, 0.05], 
           filename:     `Borang_ALD_${window.currentPrintUniqueNo}.pdf`,
           image:        { type: 'jpeg', quality: 0.98 },
           html2canvas:  { 
-              scale: 1.5, 
+              scale: 1.0, 
               useCORS: true, 
               scrollY: 0,
               backgroundColor: '#ffffff'
