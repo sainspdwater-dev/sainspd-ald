@@ -398,7 +398,7 @@
             <textarea id="edit-alamat" rows="2" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs"></textarea>
           </div>
           <div>
-            <label class="block font-bold text-slate-700 text-xs mb-1.5">Maklumat Kebocoran</label>
+            <label class="block font-bold text-slate-700 text-xs mb-1.5">Maklumat Kebocoran / Pecah</label>
             <input type="text" id="edit-maklumatKebocoran" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs">
           </div>
           <div>
@@ -1176,11 +1176,11 @@
 
         htmlTemplate = htmlTemplate.replace(/BorangALD_files\//g, GITHUB_RAW_URL);
 
-        // Normalisasi teks untuk carian keyword
+        // Normalisasi teks untuk carian checkbox
         const kerosakan = String(item.maklumatKerosakan || '').toUpperCase();
         const bocor = String(item.maklumatKebocoran || '').toUpperCase();
 
-        // Replacements placeholder baharu
+        // Pemetaan Placeholder Baharu (Mengambil dari kolum Maklumat Kebocoran dan Saiz Paip)
         const replacements = {
           "{{MAKLUMAT_KEBOCORAN}}": item.maklumatKebocoran !== '-' ? item.maklumatKebocoran : '',
           "{{SAIZ_PAIP}}": item.saizPaip !== '-' ? item.saizPaip : '',
@@ -1192,7 +1192,7 @@
           htmlTemplate = htmlTemplate.split(tag).join(value);
         }
 
-        // Logik Checkbox mengikut struktur BorangALD.htm baharu
+        // Logik Checkbox berasaskan nilai kebocoran/kerosakan
         const tickMapping = {
           "METER_STAND": (bocor.includes('STAND') || kerosakan.includes('STAND')),
           "AIR_VALVE": (bocor.includes('AIR VALVE') || bocor.includes('INJAP ANGIN') || kerosakan.includes('AIR VALVE') || kerosakan.includes('INJAP ANGIN')),
@@ -1205,7 +1205,7 @@
           htmlTemplate = htmlTemplate.replace(regexTag, mark);
         }
 
-        // Bersihkan baki placeholder yang tidak digunakan
+        // Bersihkan baki tag placeholder yang tidak digunakan
         htmlTemplate = htmlTemplate.replace(/\{\{TICK_[^}]+\}\}/g, '');
         htmlTemplate = htmlTemplate.replace(/\{\{MAKLUMAT_[^}]+\}\}/g, '');
         htmlTemplate = htmlTemplate.replace(/\{\{SAIZ_PAIP[^}]+\}\}/g, '');
