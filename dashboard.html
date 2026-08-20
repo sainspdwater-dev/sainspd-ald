@@ -1176,74 +1176,71 @@
 
         htmlTemplate = htmlTemplate.replace(/BorangALD_files\//g, GITHUB_RAW_URL);
 
-        // Normalisasi teks untuk carian checkbox & teks
+        // Normalisasi teks data kerosakan dan kebocoran
         const kerosakan = String(item.maklumatKerosakan || '').toUpperCase();
         const bocor = String(item.maklumatKebocoran || '').toUpperCase();
 
-        // Replacements placeholder utama
         const replacements = {
+          "{{TARIKH}}": item.tarikh || '',
+          "{{NO_ADUAN}}": item.noAduan !== '-' ? item.noAduan : '',
+          "{{DMA_DMZ}}": item.dmaDmz !== '-' ? item.dmaDmz : '',
+          "{{ALAMAT}}": item.alamat !== '-' ? item.alamat : '',
+          "{{KORDINAT}}": item.kordinat !== '-' ? item.kordinat : '',
+          "{{MAKLUMAT_KEROSAKAN}}": item.maklumatKerosakan !== '-' ? item.maklumatKerosakan : '',
           "{{MAKLUMAT_KEBOCORAN}}": item.maklumatKebocoran !== '-' ? item.maklumatKebocoran : '',
+          "{{MAKLUMAT_KEBOCORAN/PECAH}}": item.maklumatKebocoran !== '-' ? item.maklumatKebocoran : '',
+          "{{JENIS_PAIP}}": item.jenisPaip !== '-' ? item.jenisPaip : '',
           "{{SAIZ_PAIP}}": item.saizPaip !== '-' ? item.saizPaip : '',
-          "{{LAIN_LAIN_ADUAN_2}}": '',
-          "{{LAIN_LAIN_ADUAN_3}}": ''
+          "{{DILAPORKAN_OLEH}}": item.dilaporkanOleh !== '-' ? item.dilaporkanOleh : ''
         };
 
+        // 1. Ganti teks asas satu baris
         for (const [tag, value] of Object.entries(replacements)) {
           htmlTemplate = htmlTemplate.split(tag).join(value);
         }
 
-        // Logik Checkbox komprehensif (menyokong format jarak & garis bawah)
+        // 2. Logik Checkbox Maklumat Kerosakan Asal (Menyokong pecahan baris dari Excel)
         const tickMapping = {
           "FLOWMETER": kerosakan.includes('FLOWMETER'),
           "PRESSURE REDUCING": (kerosakan.includes('PRV') || kerosakan.includes('PRESSURE') || kerosakan.includes('REDUCING')),
-          "PRESSURE_REDUCING": (kerosakan.includes('PRV') || kerosakan.includes('PRESSURE') || kerosakan.includes('REDUCING')),
-          "KEBOCORAN ATAU PECAH": (kerosakan.includes('BOCOR') || kerosakan.includes('PECAH')),
+          "KEBOCORAN\n  ATAU PECAH": (kerosakan.includes('BOCOR') || kerosakan.includes('PECAH')),
           "ALTITUDE VALVE": kerosakan.includes('ALTITUDE'),
-          "ALTITUDE_VALVE": kerosakan.includes('ALTITUDE'),
-          "SAMBUNGAN HARAM": kerosakan.includes('HARAM'),
-          "SAMBUNGAN_HARAM": kerosakan.includes('HARAM'),
-          "LIMPAHAN KOLAM/TANGKI": (kerosakan.includes('LIMPAHAN') || kerosakan.includes('TANGKI')),
-          "METER PENGGUNA": kerosakan.includes('METER PENGGUNA'),
+          "SAMBUNGAN\n  HARAM": kerosakan.includes('HARAM'),
+          "LIMPAHAN\n  KOLAM/TANGKI": (kerosakan.includes('LIMPAHAN') || kerosakan.includes('TANGKI')),
+          "METER\n  PENGGUNA": kerosakan.includes('METER PENGGUNA'),
           
+          // Maklumat Kebocoran / Pecah
           "BULKMETER": bocor.includes('BULK'),
-          "METER STAND": (bocor.includes('STAND') || kerosakan.includes('STAND')),
-          "METER_STAND": (bocor.includes('STAND') || kerosakan.includes('STAND')),
-          "AIR VALVE": (bocor.includes('AIR VALVE') || bocor.includes('INJAP ANGIN')),
-          "AIR_VALVE": (bocor.includes('AIR VALVE') || bocor.includes('INJAP ANGIN')),
-          "METER INDIVIDU": (bocor.includes('INDIVIDU') || kerosakan.includes('INDIVIDU')),
-          "METER_INDIVIDU": (bocor.includes('INDIVIDU') || kerosakan.includes('INDIVIDU')),
+          "METER STAND": bocor.includes('STAND'),
           "Injap Rosak": (bocor.includes('SLUICE') || bocor.includes('INJAP') || bocor.includes('ROSAK')),
-          "INJAP_ROSAK": (bocor.includes('SLUICE') || bocor.includes('INJAP') || bocor.includes('ROSAK')),
           "PAIP PERHUBUNGAN": (bocor.includes('HUBUNGAN') || bocor.includes('PERHUBUNGAN')),
-          "PAIP_PERHUBUNGAN": (bocor.includes('HUBUNGAN') || bocor.includes('PERHUBUNGAN')),
-          "Paip Pecah,Paip Bocor": (bocor.includes('UTAMA') || bocor.includes('PECAH') || bocor.includes('BOCOR'))
+          "Paip Pecah,Paip\n  Bocor": (bocor.includes('UTAMA') || bocor.includes('PECAH') || bocor.includes('BOCOR'))
         };
 
+        // Gantikan tag TICK secara dinamik dengan regex yang mengabaikan line-break ruang kosong Excel
         for (const [key, isChecked] of Object.entries(tickMapping)) {
           const mark = isChecked ? '✔' : '';
-          const escapedKey = key.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&').replace(/\s+/g, '\\s*');
+          const escapedKey = key.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&').replace(/\s+/g, '\\s+');
           const regexTag = new RegExp(`\\{\\{\\s*TICK_${escapedKey}\\s*\\}\\}`, 'g');
           htmlTemplate = htmlTemplate.replace(regexTag, mark);
         }
 
-        // Bersihkan baki tag placeholder yang tidak digunakan
+        // Bersihkan sebarang baki tag TICK atau maklumat yang tidak terpakai
         htmlTemplate = htmlTemplate.replace(/\{\{TICK_[^}]+\}\}/g, '');
         htmlTemplate = htmlTemplate.replace(/\{\{MAKLUMAT_[^}]+\}\}/g, '');
-        htmlTemplate = htmlTemplate.replace(/\{\{SAIZ_PAIP[^}]+\}\}/g, '');
-        htmlTemplate = htmlTemplate.replace(/\{\{LAIN_LAIN_ADUAN_[^}]+\}\}/g, '');
 
-        // Override CSS yang dioptimumkan untuk muat tepat 1 mukasurat A4
+        // Override CSS asal untuk memastikan paparan kemas
         const overrideCSS = `
         <style>
             v\\:shape, .shape, o\\:p { display: none !important; }
             #print-preview-content img {
                 position: static !important; top: auto !important; left: auto !important;
                 transform: none !important; float: none !important;
-                max-height: 24px !important; display: inline-block !important; margin: 0 !important;
+                max-height: 28px !important; display: inline-block !important; margin: 0 !important;
             }
             #print-preview-content *, table td, table th, span, div { color: #000000 !important; }
             body { background: white !important; margin: 0 !important; padding: 0 !important; }
-            table { width: 100% !important; max-width: 100% !important; font-size: 7pt !important; line-height: 1.0 !important; }
+            table { width: 100% !important; max-width: 100% !important; font-size: 7.5pt !important; line-height: 1.1 !important; }
             tr { height: auto !important; }
             td { padding: 1px 2px !important; }
         </style>`;
@@ -1286,11 +1283,11 @@
       element.style.boxShadow = 'none';
       
       const opt = {
-          margin:       [0.05, 0.05, 0.05, 0.05], 
+          margin:       [0.1, 0.1, 0.1, 0.1], 
           filename:     `Borang_ALD_${window.currentPrintUniqueNo}.pdf`,
           image:        { type: 'jpeg', quality: 0.98 },
           html2canvas:  { 
-              scale: 1.0, 
+              scale: 1.5, 
               useCORS: true, 
               scrollY: 0,
               backgroundColor: '#ffffff'
