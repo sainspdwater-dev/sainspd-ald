@@ -1181,43 +1181,43 @@
         const bocor = String(item.maklumatKebocoran || '').toUpperCase();
 
         const replacements = {
-          "{{TARIKH}}": item.tarikh || '',
-          "{{NO_ADUAN}}": item.noAduan !== '-' ? item.noAduan : '',
-          "{{DMA_DMZ}}": item.dmaDmz !== '-' ? item.dmaDmz : '',
-          "{{ALAMAT}}": item.alamat !== '-' ? item.alamat : '',
-          "{{KORDINAT}}": item.kordinat !== '-' ? item.kordinat : '',
-          "{{MAKLUMAT_KEROSAKAN}}": item.maklumatKerosakan !== '-' ? item.maklumatKerosakan : '',
-          "{{MAKLUMAT_KEBOCORAN}}": item.maklumatKebocoran !== '-' ? item.maklumatKebocoran : '',
-          "{{MAKLUMAT_KEBOCORAN/PECAH}}": item.maklumatKebocoran !== '-' ? item.maklumatKebocoran : '',
-          "{{JENIS_PAIP}}": item.jenisPaip !== '-' ? item.jenisPaip : '',
-          "{{SAIZ_PAIP}}": item.saizPaip !== '-' ? item.saizPaip : '',
-          "{{DILAPORKAN_OLEH}}": item.dilaporkanOleh !== '-' ? item.dilaporkanOleh : ''
+          "TARIKH": item.tarikh || '',
+          "NO_ADUAN": item.noAduan !== '-' ? item.noAduan : '',
+          "DMA_DMZ": item.dmaDmz !== '-' ? item.dmaDmz : '',
+          "ALAMAT": item.alamat !== '-' ? item.alamat : '',
+          "KORDINAT": item.kordinat !== '-' ? item.kordinat : '',
+          "MAKLUMAT_KEROSAKAN": item.maklumatKerosakan !== '-' ? item.maklumatKerosakan : '',
+          "MAKLUMAT_KEBOCORAN": item.maklumatKebocoran !== '-' ? item.maklumatKebocoran : '',
+          "JENIS_PAIP": item.jenisPaip !== '-' ? item.jenisPaip : '',
+          "SAIZ_PAIP": item.saizPaip !== '-' ? item.saizPaip : '',
+          "DILAPORKAN_OLEH": item.dilaporkanOleh !== '-' ? item.dilaporkanOleh : ''
         };
 
-        // 1. Ganti teks asas satu baris
+        // 1. Ganti teks asas menggunakan regex fleksibel
         for (const [tag, value] of Object.entries(replacements)) {
-          htmlTemplate = htmlTemplate.split(tag).join(value);
+          const regexTag = new RegExp(`\\{\\{\\s*${tag}\\s*\\}\\}`, 'g');
+          htmlTemplate = htmlTemplate.replace(regexTag, value);
         }
 
-        // 2. Logik Checkbox Maklumat Kerosakan Asal (Menyokong pecahan baris dari Excel)
+        // 2. Pemetaan Checkbox / Ticks Tepat Mengikut Templat Raw Borang[cite: 8]
         const tickMapping = {
           "FLOWMETER": kerosakan.includes('FLOWMETER'),
-          "PRESSURE REDUCING": (kerosakan.includes('PRV') || kerosakan.includes('PRESSURE') || kerosakan.includes('REDUCING')),
-          "KEBOCORAN\n  ATAU PECAH": (kerosakan.includes('BOCOR') || kerosakan.includes('PECAH')),
+          "PRESSURE REDUCING VALVE (PRV)": (kerosakan.includes('PRV') || kerosakan.includes('PRESSURE') || kerosakan.includes('REDUCING')),
+          "KEBOCORAN ATAU PECAH": (kerosakan.includes('BOCOR') || kerosakan.includes('PECAH')),
           "ALTITUDE VALVE": kerosakan.includes('ALTITUDE'),
-          "SAMBUNGAN\n  HARAM": kerosakan.includes('HARAM'),
-          "LIMPAHAN\n  KOLAM/TANGKI": (kerosakan.includes('LIMPAHAN') || kerosakan.includes('TANGKI')),
-          "METER\n  PENGGUNA": kerosakan.includes('METER PENGGUNA'),
+          "SAMBUNGAN HARAM": kerosakan.includes('HARAM'),
+          "LIMPAHAN KOLAM/TANGKI": (kerosakan.includes('LIMPAHAN') || kerosakan.includes('TANGKI')),
+          "METER PENGGUNA": kerosakan.includes('METER PENGGUNA'),
           
           // Maklumat Kebocoran / Pecah
           "BULKMETER": bocor.includes('BULK'),
           "METER STAND": bocor.includes('STAND'),
-          "Injap Rosak": (bocor.includes('SLUICE') || bocor.includes('INJAP') || bocor.includes('ROSAK')),
+          "INJAP ANGIN": (bocor.includes('AIR VALVE') || bocor.includes('INJAP') || bocor.includes('ANGIN')),
           "PAIP PERHUBUNGAN": (bocor.includes('HUBUNGAN') || bocor.includes('PERHUBUNGAN')),
-          "Paip Pecah,Paip\n  Bocor": (bocor.includes('UTAMA') || bocor.includes('PECAH') || bocor.includes('BOCOR'))
+          "Paip Pecah,Paip Bocor": (bocor.includes('UTAMA') || bocor.includes('PECAH') || bocor.includes('BOCOR'))
         };
 
-        // Gantikan tag TICK secara dinamik dengan regex yang mengabaikan line-break ruang kosong Excel
+        // Gantikan tag TICK secara dinamik dengan regex yang mengabaikan ruang kosong
         for (const [key, isChecked] of Object.entries(tickMapping)) {
           const mark = isChecked ? '✔' : '';
           const escapedKey = key.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&').replace(/\s+/g, '\\s+');
