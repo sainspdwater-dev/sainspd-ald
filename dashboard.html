@@ -1229,39 +1229,36 @@
         htmlTemplate = htmlTemplate.replace(/\{\{TICK_[^}]+\}\}/g, '');
         htmlTemplate = htmlTemplate.replace(/\{\{MAKLUMAT_[^}]+\}\}/g, '');
 
-        const overrideCSS = `
-        <style>
-            @page { size: a4 portrait; margin: 5mm; }
-            v\\:shape, .shape, o\\:p { display: none !important; }
-            #print-preview-content *, table td, table th, span, div { color: #000000 !important; }
-            body { background: white !important; margin: 0 !important; padding: 0 !important; }
-            
-            #print-preview-content {
-                position: relative !important;
-                width: 100% !important;
-                max-width: 680px !important;
-                margin: 0 auto !important;
-                padding: 5px !important;
-                box-sizing: border-box !important;
-                page-break-after: avoid !important;
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
-            }
-            
-            #print-preview-content table {
-                width: 100% !important;
-                max-width: 100% !important;
-                table-layout: auto !important;
-                margin: 0 auto !important;
-                font-size: 5.8pt !important;
-                line-height: 1.02 !important;
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
-            }
-            
-            #print-preview-content col { width: auto !important; }
-            td { padding: 0.5px 1px !important; }
-        </style>`;
+        // Menggunakan string biasa dengan petik dua (" ") untuk mengelakkan ralat backtick
+        const overrideCSS = "<style>\n" +
+            "@page { size: a4 portrait; margin: 5mm; }\n" +
+            "v\\\\:shape, .shape, o\\\\:p { display: none !important; }\n" +
+            "#print-preview-content *, table td, table th, span, div { color: #000000 !important; }\n" +
+            "body { background: white !important; margin: 0 !important; padding: 0 !important; }\n" +
+            "#print-preview-content {\n" +
+            "    position: relative !important;\n" +
+            "    width: 100% !important;\n" +
+            "    max-width: 680px !important;\n" +
+            "    margin: 0 auto !important;\n" +
+            "    padding: 5px !important;\n" +
+            "    box-sizing: border-box !important;\n" +
+            "    page-break-after: avoid !important;\n" +
+            "    page-break-inside: avoid !important;\n" +
+            "    break-inside: avoid !important;\n" +
+            "}\n" +
+            "#print-preview-content table {\n" +
+            "    width: 100% !important;\n" +
+            "    max-width: 100% !important;\n" +
+            "    table-layout: auto !important;\n" +
+            "    margin: 0 auto !important;\n" +
+            "    font-size: 5.8pt !important;\n" +
+            "    line-height: 1.02 !important;\n" +
+            "    page-break-inside: avoid !important;\n" +
+            "    break-inside: avoid !important;\n" +
+            "}\n" +
+            "#print-preview-content col { width: auto !important; }\n" +
+            "td { padding: 0.5px 1px !important; }\n" +
+            "</style>";
         
         htmlTemplate = htmlTemplate.replace('</head>', overrideCSS + '</head>');
         document.getElementById('print-preview-content').innerHTML = htmlTemplate;
