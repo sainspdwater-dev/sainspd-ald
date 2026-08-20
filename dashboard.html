@@ -398,7 +398,7 @@
             <textarea id="edit-alamat" rows="2" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs"></textarea>
           </div>
           <div>
-            <label class="block font-bold text-slate-700 text-xs mb-1.5">Maklumat Kebocoran / Pecah</label>
+            <label class="block font-bold text-slate-700 text-xs mb-1.5">Maklumat Kebocoran</label>
             <input type="text" id="edit-maklumatKebocoran" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs">
           </div>
           <div>
@@ -1176,57 +1176,40 @@
 
         htmlTemplate = htmlTemplate.replace(/BorangALD_files\//g, GITHUB_RAW_URL);
 
-        // Normalisasi teks data kerosakan dan kebocoran
+        // Normalisasi teks untuk carian keyword
         const kerosakan = String(item.maklumatKerosakan || '').toUpperCase();
         const bocor = String(item.maklumatKebocoran || '').toUpperCase();
 
+        // Replacements placeholder baharu
         const replacements = {
-          "{{TARIKH}}": item.tarikh || '',
-          "{{NO_ADUAN}}": item.noAduan !== '-' ? item.noAduan : '',
-          "{{DMA_DMZ}}": item.dmaDmz !== '-' ? item.dmaDmz : '',
-          "{{ALAMAT}}": item.alamat !== '-' ? item.alamat : '',
-          "{{KORDINAT}}": item.kordinat !== '-' ? item.kordinat : '',
-          "{{MAKLUMAT_KEROSAKAN}}": item.maklumatKerosakan !== '-' ? item.maklumatKerosakan : '',
-          "{{MAKLUMAT_KEBOCORAN/PECAH}}": item.maklumatKebocoran !== '-' ? item.maklumatKebocoran : '',
-          "{{JENIS_PAIP}}": item.jenisPaip !== '-' ? item.jenisPaip : '',
+          "{{MAKLUMAT_KEBOCORAN}}": item.maklumatKebocoran !== '-' ? item.maklumatKebocoran : '',
           "{{SAIZ_PAIP}}": item.saizPaip !== '-' ? item.saizPaip : '',
-          "{{DILAPORKAN_OLEH}}": item.dilaporkanOleh !== '-' ? item.dilaporkanOleh : ''
+          "{{LAIN_LAIN_ADUAN_2}}": '',
+          "{{LAIN_LAIN_ADUAN_3}}": ''
         };
 
-        // 1. Ganti teks asas satu baris
         for (const [tag, value] of Object.entries(replacements)) {
           htmlTemplate = htmlTemplate.split(tag).join(value);
         }
 
-        // 2. Logik Checkbox Maklumat Kerosakan (Menyokong pecahan baris dari Excel)
+        // Logik Checkbox mengikut struktur BorangALD.htm baharu
         const tickMapping = {
-          "FLOWMETER": kerosakan.includes('FLOWMETER'),
-          "PRESSURE REDUCING": (kerosakan.includes('PRV') || kerosakan.includes('PRESSURE') || kerosakan.includes('REDUCING')),
-          "KEBOCORAN\n  ATAU PECAH": (kerosakan.includes('BOCOR') || kerosakan.includes('PECAH')),
-          "ALTITUDE VALVE": kerosakan.includes('ALTITUDE'),
-          "SAMBUNGAN\n  HARAM": kerosakan.includes('HARAM'),
-          "LIMPAHAN\n  KOLAM/TANGKI": (kerosakan.includes('LIMPAHAN') || kerosakan.includes('TANGKI')),
-          "METER\n  PENGGUNA": kerosakan.includes('METER PENGGUNA'),
-          
-          // Maklumat Kebocoran / Pecah
-          "BULKMETER": bocor.includes('BULK'),
-          "METER STAND": bocor.includes('STAND'),
-          "Injap Rosak": (bocor.includes('SLUICE') || bocor.includes('INJAP') || bocor.includes('ROSAK')),
-          "PAIP PERHUBUNGAN": (bocor.includes('HUBUNGAN') || bocor.includes('PERHUBUNGAN')),
-          "Paip Pecah,Paip\n  Bocor": (bocor.includes('UTAMA') || bocor.includes('PECAH') || bocor.includes('BOCOR'))
+          "METER_STAND": (bocor.includes('STAND') || kerosakan.includes('STAND')),
+          "AIR_VALVE": (bocor.includes('AIR VALVE') || bocor.includes('INJAP ANGIN') || kerosakan.includes('AIR VALVE') || kerosakan.includes('INJAP ANGIN')),
+          "METER_INDIVIDU": (bocor.includes('INDIVIDU') || kerosakan.includes('INDIVIDU'))
         };
 
-        // Gantikan tag TICK secara dinamik dengan regex yang mengabaikan line-break ruang kosong Excel
         for (const [key, isChecked] of Object.entries(tickMapping)) {
           const mark = isChecked ? '✔' : '';
-          const escapedKey = key.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&').replace(/\s+/g, '\\s+');
-          const regexTag = new RegExp(`\\{\\{\\s*TICK_${escapedKey}\\s*\\}\\}`, 'g');
+          const regexTag = new RegExp(`\\{\\{\\s*TICK_${key}\\s*\\}\\}`, 'g');
           htmlTemplate = htmlTemplate.replace(regexTag, mark);
         }
 
-        // Bersihkan sebarang baki tag TICK atau maklumat yang tidak terpakai
+        // Bersihkan baki placeholder yang tidak digunakan
         htmlTemplate = htmlTemplate.replace(/\{\{TICK_[^}]+\}\}/g, '');
         htmlTemplate = htmlTemplate.replace(/\{\{MAKLUMAT_[^}]+\}\}/g, '');
+        htmlTemplate = htmlTemplate.replace(/\{\{SAIZ_PAIP[^}]+\}\}/g, '');
+        htmlTemplate = htmlTemplate.replace(/\{\{LAIN_LAIN_ADUAN_[^}]+\}\}/g, '');
 
         // Override CSS untuk memastikan paparan kemas dan stabil dalam PDF
         const overrideCSS = `
