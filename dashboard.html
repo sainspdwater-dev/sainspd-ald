@@ -65,6 +65,39 @@
       transform: translateX(-50%); opacity: 0; transition: opacity 0.2s; font-size: 10px; font-weight: 500;
     }
     .tooltip-wrap:hover .tooltip-text { visibility: visible; opacity: 1; }
+
+    /* ==========================================
+       CSS TAMBAHAN UNTUK PENDEKATAN 1 (CETAKAN) 
+       ========================================== */
+    .a4-container {
+        width: 794px; /* Lebar piksel tepat untuk A4 96dpi */
+        height: 1123px; /* Tinggi piksel tepat untuk A4 96dpi */
+        position: relative; /* Kunci untuk letak form-field */
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-position: center;
+        background-color: white;
+        margin: 0 auto;
+        box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        font-family: Arial, sans-serif;
+        color: black;
+    }
+    .mode-clean { background-image: url('borang-bersih_page-0001.jpg'); }
+    .mode-placeholder { background-image: url('borang-placeholder.jpg'); }
+
+    /* Gaya elemen atas borang */
+    .form-field { position: absolute; font-size: 12px; font-weight: bold; color: black; }
+    .form-textarea { position: absolute; font-size: 12px; font-weight: bold; color: black; width: 550px; word-wrap: break-word; white-space: pre-line; line-height: 1.4; }
+    .tick-field { position: absolute; font-size: 16px; font-weight: bold; color: black; } /* Untuk ✔ */
+
+    /* Tetapan waktu cetak */
+    @media print {
+        body * { visibility: hidden; }
+        #printModal, #printModal * { visibility: visible; }
+        #printModal { position: absolute; left: 0; top: 0; margin: 0; padding: 0; background: white; border: none; box-shadow: none; }
+        .modal-header-print { display: none !important; } /* Sorok butang masa print */
+        .a4-container { box-shadow: none; margin: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
   </style>
 </head>
 <body class="flex flex-col h-screen overflow-hidden text-slate-800">
@@ -430,14 +463,20 @@
     </div>
   </div>
 
-  <!-- PRINT PREVIEW MODAL -->
-  <div id="printModal" class="fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+  <!-- PRINT MODAL (MODIFIED FOR PENDEKATAN 1) -->
+  <div id="printModal" class="fixed inset-0 z-[100] bg-slate-900/90 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="bg-slate-50 rounded-2xl shadow-2xl w-full max-w-5xl max-h-[95vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
         
         <!-- Modal Header -->
-        <div class="p-4 bg-primary text-white flex items-center justify-between shadow-md z-10">
-            <h2 class="font-bold text-lg"><i class="fa-solid fa-print mr-2"></i>Pratonton Borang Aduan ALD</h2>
-            <div class="flex space-x-3">
+        <div class="modal-header-print p-4 bg-primary text-white flex items-center justify-between shadow-md z-10">
+            <h2 class="font-bold text-lg"><i class="fa-solid fa-print mr-2"></i>Pratonton Borang ALD</h2>
+            <div class="flex space-x-3 items-center">
+                <button onclick="togglePrintMode()" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-xl transition shadow-lg flex items-center space-x-2">
+                    <i class="fa-solid fa-image"></i><span>Tukar Mod Imej</span>
+                </button>
+                <button onclick="window.print()" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-xl transition shadow-lg flex items-center space-x-2">
+                    <i class="fa-solid fa-print"></i><span>Cetak (Print)</span>
+                </button>
                 <button onclick="downloadPDF()" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl transition shadow-lg flex items-center space-x-2">
                     <i class="fa-solid fa-download"></i><span>Muat Turun PDF</span>
                 </button>
@@ -447,11 +486,43 @@
             </div>
         </div>
 
-        <!-- Modal Body (Preview Canvas) -->
-        <div class="p-6 overflow-y-auto flex-1 flex justify-center bg-white">
-            <div id="print-preview-content" class="bg-white shadow-xl w-fit min-w-[750px] p-8">
-                <!-- BorangALD.htm akan dimuatkan di sini dari GitHub -->
+        <!-- Modal Body (Preview Canvas - A4 Container) -->
+        <div class="p-6 overflow-y-auto flex-1 flex justify-center bg-gray-200">
+            
+            <!-- KONTENA A4 PENDEKATAN 1 -->
+            <div id="borangContainer" class="a4-container mode-clean">
+                
+                <!-- DATA ASAS -->
+                <!-- Nota: Nilai top dan left di bawah adalah anggaran, anda boleh ubah menggunakan F12 (Inspect) -->
+                <div id="pf-tarikh" class="form-field" style="top: 133px; left: 160px;"></div>
+                <div id="pf-noAduan" class="form-field" style="top: 133px; left: 520px;"></div>
+                <div id="pf-dma" class="form-field" style="top: 160px; left: 160px;"></div>
+                <div id="pf-lapor" class="form-field" style="top: 160px; left: 550px;"></div>
+                
+                <div id="pf-jenisPaip" class="form-field" style="top: 350px; left: 190px;"></div>
+                <div id="pf-keterangan" class="form-textarea" style="top: 420px; left: 260px;"></div>
+                <div id="pf-alamat" class="form-field" style="top: 525px; left: 370px;"></div>
+                <div id="pf-kordinat" class="form-field" style="top: 720px; left: 450px;"></div>
+
+                <!-- TICK KEROSAKAN (✔) -->
+                <div id="pt-flowmeter" class="tick-field" style="top: 185px; left: 395px;"></div>
+                <div id="pt-prv" class="tick-field" style="top: 185px; left: 745px;"></div>
+                <div id="pt-bocor" class="tick-field" style="top: 205px; left: 395px;"></div>
+                <div id="pt-altitude" class="tick-field" style="top: 205px; left: 745px;"></div>
+                <div id="pt-haram" class="tick-field" style="top: 228px; left: 395px;"></div>
+                <div id="pt-limpahan" class="tick-field" style="top: 250px; left: 395px;"></div>
+                <div id="pt-meter" class="tick-field" style="top: 275px; left: 395px;"></div>
+
+                <!-- TICK KEBOCORAN (✔) -->
+                <div id="pt-bulkmeter" class="tick-field" style="top: 310px; left: 745px;"></div>
+                <div id="pt-meterstand" class="tick-field" style="top: 332px; left: 585px;"></div>
+                <div id="pt-sluice" class="tick-field" style="top: 332px; left: 745px;"></div>
+                <div id="pt-airvalve" class="tick-field" style="top: 355px; left: 585px;"></div>
+                <div id="pt-hubung" class="tick-field" style="top: 355px; left: 745px;"></div>
+                <div id="pt-utama" class="tick-field" style="top: 375px; left: 745px;"></div>
+
             </div>
+
         </div>
 
     </div>
@@ -659,6 +730,20 @@
     // ============================================================
     // DATA HANDLING FUNCTIONS
     // ============================================================
+    function parseCoordinates(str) {
+      if (str === null || str === undefined) return { coords: null };
+      const trimmed = String(str).trim();
+      const invalidValues = ['-', 'tiada', 'n/a', '#n/a', 'kosong', '""', ''];
+      if (invalidValues.includes(trimmed.toLowerCase())) return { coords: null };
+      if (!trimmed.includes(',')) return { coords: null };
+      const parts = trimmed.split(',');
+      if (parts.length < 2) return { coords: null };
+      const lat = parseFloat(parts[0].trim());
+      const lng = parseFloat(parts[1].trim());
+      if (isNaN(lat) || isNaN(lng) || (lat === 0 && lng === 0) || lat < -90 || lat > 90 || lng < -180 || lng > 180) return { coords: null };
+      return { coords: null }; // Changed to null because original parsed was generating error sometimes if map isn't ready. Left map handler to process.
+    }
+    // Restored correct map parsing logic
     function parseCoordinates(str) {
       if (str === null || str === undefined) return { coords: null };
       const trimmed = String(str).trim();
@@ -1152,155 +1237,93 @@
     }
 
     // ============================================================
-    // PRINT FUNCTION (CLIENT-SIDE HTML TO PDF - FETCH FROM GITHUB)
+    // PRINT FUNCTION (PENDEKATAN 1 : CSS OVERLAY IMAGE)
     // ============================================================
+    function togglePrintMode() {
+        const container = document.getElementById('borangContainer');
+        if (container.classList.contains('mode-placeholder')) {
+            container.classList.remove('mode-placeholder');
+            container.classList.add('mode-clean');
+            showToast('Mod: Borang Bersih (Sedia Dicetak)', 'success');
+        } else {
+            container.classList.remove('mode-clean');
+            container.classList.add('mode-placeholder');
+            showToast('Mod: Garisan Panduan (Untuk Adjust)', 'success');
+        }
+    }
+
     async function executePrint(uniqueNo) {
       const uNo = uniqueNo || document.getElementById('edit-uniqueNo').value;
-      if (!uNo) {
-        return showToast('Sila pilih atau buka rekod untuk dicetak.', 'danger');
-      }
+      if (!uNo) return showToast('Sila pilih atau buka rekod untuk dicetak.', 'danger');
 
       const item = globalData.find(d => d.uniqueNo === uNo);
-      if (!item) {
-        return showToast('Rekod tidak dijumpai.', 'danger');
+      if (!item) return showToast('Rekod tidak dijumpai.', 'danger');
+
+      // 1. Masukkan Teks Biasa
+      document.getElementById('pf-tarikh').innerText = item.tarikh !== '-' ? item.tarikh : '';
+      document.getElementById('pf-noAduan').innerText = item.noAduan !== '-' ? item.noAduan : '';
+      document.getElementById('pf-dma').innerText = item.dmaDmz !== '-' ? item.dmaDmz : '';
+      document.getElementById('pf-lapor').innerText = item.dilaporkanOleh !== '-' ? item.dilaporkanOleh : '';
+      document.getElementById('pf-jenisPaip').innerText = item.jenisPaip !== '-' ? item.jenisPaip : '';
+      document.getElementById('pf-alamat').innerText = item.alamat !== '-' ? item.alamat : '';
+      document.getElementById('pf-kordinat').innerText = item.kordinat !== '-' ? item.kordinat : '';
+      
+      // Cantum Keterangan & Saiz Paip
+      let keteranganStr = (item.maklumatKebocoran !== '-' ? item.maklumatKebocoran : '');
+      if (item.saizPaip && item.saizPaip !== '-') {
+          keteranganStr += (keteranganStr ? ', ' : '') + item.saizPaip + ' inch';
       }
+      document.getElementById('pf-keterangan').innerText = keteranganStr;
 
-      showLoading(true, "Menjana Pratonton Cetakan...");
+      // 2. Analisis Logik Kerosakan (Checkbox / Ticks)
+      const kerosakan = String(item.maklumatKerosakan || '').toUpperCase();
+      const bocor = String(item.maklumatKebocoran || '').toUpperCase();
 
-      try {
-        const GITHUB_RAW_URL = 'https://raw.githubusercontent.com/sainspdwater-dev/borangald/main/';
-        
-        const borangRes = await fetch(GITHUB_RAW_URL + 'BorangALD.htm');
-        if (!borangRes.ok) throw new Error('Gagal memuat turun templat BorangALD.htm dari GitHub');
-        let htmlTemplate = await borangRes.text();
+      // Tick Maklumat Kerosakan
+      document.getElementById('pt-flowmeter').innerText = kerosakan.includes('FLOWMETER') ? '✔' : '';
+      document.getElementById('pt-prv').innerText = (kerosakan.includes('PRV') || kerosakan.includes('PRESSURE') || kerosakan.includes('REDUCING')) ? '✔' : '';
+      document.getElementById('pt-bocor').innerText = (kerosakan.includes('BOCOR') || kerosakan.includes('PECAH')) ? '✔' : '';
+      document.getElementById('pt-altitude').innerText = kerosakan.includes('ALTITUDE') ? '✔' : '';
+      document.getElementById('pt-haram').innerText = kerosakan.includes('HARAM') ? '✔' : '';
+      document.getElementById('pt-limpahan').innerText = (kerosakan.includes('LIMPAHAN') || kerosakan.includes('TANGKI')) ? '✔' : '';
+      document.getElementById('pt-meter').innerText = kerosakan.includes('METER PENGGUNA') ? '✔' : '';
 
-        htmlTemplate = htmlTemplate.replace(/BorangALD_files\//g, GITHUB_RAW_URL);
+      // Tick Maklumat Kebocoran
+      document.getElementById('pt-bulkmeter').innerText = bocor.includes('BULK') ? '✔' : '';
+      document.getElementById('pt-meterstand').innerText = bocor.includes('STAND') ? '✔' : '';
+      document.getElementById('pt-sluice').innerText = bocor.includes('SLUICE') ? '✔' : '';
+      document.getElementById('pt-airvalve').innerText = (bocor.includes('AIR VALVE') || bocor.includes('INJAP') || bocor.includes('ANGIN')) ? '✔' : '';
+      document.getElementById('pt-hubung').innerText = (bocor.includes('HUBUNGAN') || bocor.includes('PERHUBUNGAN')) ? '✔' : '';
+      document.getElementById('pt-utama').innerText = (bocor.includes('UTAMA') || bocor.includes('PECAH') || bocor.includes('BOCOR')) ? '✔' : '';
 
-        // Normalisasi teks data kerosakan dan kebocoran
-        const kerosakan = String(item.maklumatKerosakan || '').toUpperCase();
-        const bocor = String(item.maklumatKebocoran || '').toUpperCase();
+      // Pastikan borang bermula dengan mod bersih
+      document.getElementById('borangContainer').className = 'a4-container mode-clean';
+      window.currentPrintUniqueNo = uNo;
 
-        const replacements = {
-          "TARIKH": item.tarikh || '',
-          "NO_ADUAN": item.noAduan !== '-' ? item.noAduan : '',
-          "DMA_DMZ": item.dmaDmz !== '-' ? item.dmaDmz : '',
-          "ALAMAT": item.alamat !== '-' ? item.alamat : '',
-          "KORDINAT": item.kordinat !== '-' ? item.kordinat : '',
-          "MAKLUMAT_KEROSAKAN": item.maklumatKerosakan !== '-' ? item.maklumatKerosakan : '',
-          "MAKLUMAT_KEBOCORAN": item.maklumatKebocoran !== '-' ? item.maklumatKebocoran : '',
-          "JENIS_PAIP": item.jenisPaip !== '-' ? item.jenisPaip : '',
-          "SAIZ_PAIP": item.saizPaip !== '-' ? item.saizPaip : '',
-          "DILAPORKAN_OLEH": item.dilaporkanOleh !== '-' ? item.dilaporkanOleh : ''
-        };
-
-        // 1. Ganti teks asas menggunakan regex fleksibel
-        for (const [tag, value] of Object.entries(replacements)) {
-          const regexTag = new RegExp(`\\{\\{\\s*${tag}\\s*\\}\\}`, 'g');
-          htmlTemplate = htmlTemplate.replace(regexTag, value);
-        }
-
-        // 2. Pemetaan Checkbox / Ticks Tepat Mengikut Templat Raw Borang[cite: 8]
-        const tickMapping = {
-          "FLOWMETER": kerosakan.includes('FLOWMETER'),
-          "PRESSURE REDUCING VALVE (PRV)": (kerosakan.includes('PRV') || kerosakan.includes('PRESSURE') || kerosakan.includes('REDUCING')),
-          "KEBOCORAN ATAU PECAH": (kerosakan.includes('BOCOR') || kerosakan.includes('PECAH')),
-          "ALTITUDE VALVE": kerosakan.includes('ALTITUDE'),
-          "SAMBUNGAN HARAM": kerosakan.includes('HARAM'),
-          "LIMPAHAN KOLAM/TANGKI": (kerosakan.includes('LIMPAHAN') || kerosakan.includes('TANGKI')),
-          "METER PENGGUNA": kerosakan.includes('METER PENGGUNA'),
-          
-          // Maklumat Kebocoran / Pecah
-          "BULKMETER": bocor.includes('BULK'),
-          "METER STAND": bocor.includes('STAND'),
-          "INJAP ANGIN": (bocor.includes('AIR VALVE') || bocor.includes('INJAP') || bocor.includes('ANGIN')),
-          "PAIP PERHUBUNGAN": (bocor.includes('HUBUNGAN') || bocor.includes('PERHUBUNGAN')),
-          "Paip Pecah,Paip Bocor": (bocor.includes('UTAMA') || bocor.includes('PECAH') || bocor.includes('BOCOR'))
-        };
-
-        // Gantikan tag TICK secara dinamik dengan regex yang mengabaikan ruang kosong
-        for (const [key, isChecked] of Object.entries(tickMapping)) {
-          const mark = isChecked ? '✔' : '';
-          const escapedKey = key.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&').replace(/\s+/g, '\\s+');
-          const regexTag = new RegExp(`\\{\\{\\s*TICK_${escapedKey}\\s*\\}\\}`, 'g');
-          htmlTemplate = htmlTemplate.replace(regexTag, mark);
-        }
-
-        // Bersihkan sebarang baki tag TICK atau maklumat yang tidak terpakai
-        htmlTemplate = htmlTemplate.replace(/\{\{TICK_[^}]+\}\}/g, '');
-        htmlTemplate = htmlTemplate.replace(/\{\{MAKLUMAT_[^}]+\}\}/g, '');
-
-        // Override CSS asal untuk memastikan paparan kemas
-        const overrideCSS = `
-        <style>
-            v\\:shape, .shape, o\\:p { display: none !important; }
-            #print-preview-content img {
-                position: static !important; top: auto !important; left: auto !important;
-                transform: none !important; float: none !important;
-                max-height: 28px !important; display: inline-block !important; margin: 0 !important;
-            }
-            #print-preview-content *, table td, table th, span, div { color: #000000 !important; }
-            body { background: white !important; margin: 0 !important; padding: 0 !important; }
-            table { width: 100% !important; max-width: 100% !important; font-size: 6pt !important; line-height: 1.1 !important; }
-            tr { height: auto !important; }
-            td { padding: 1px 2px !important; }
-        </style>`;
-        
-        htmlTemplate = htmlTemplate.replace('</head>', overrideCSS + '</head>');
-        document.getElementById('print-preview-content').innerHTML = htmlTemplate;
-
-        const previewImgs = document.querySelectorAll('#print-preview-content img');
-        previewImgs.forEach(img => {
-            img.style.setProperty('position', 'static', 'important');
-            img.style.setProperty('top', 'auto', 'important');
-            img.style.setProperty('left', 'auto', 'important');
-            img.style.setProperty('transform', 'none', 'important');
-            img.style.setProperty('float', 'none', 'important');
-            img.style.setProperty('display', 'inline-block', 'important');
-            img.style.setProperty('margin', '0', 'important');
-        });
-
-        window.currentPrintUniqueNo = uNo;
-        document.getElementById('printModal').classList.remove('hidden');
-        showLoading(false);
-        showToast('Pratonton sedia untuk dicetak', 'success');
-
-      } catch (err) {
-        showLoading(false);
-        showToast('Ralat memuat turun borang: ' + err.message, 'danger');
-      }
+      // Buka Modal
+      document.getElementById('printModal').classList.remove('hidden');
     }
 
     function closePrintModal() {
       document.getElementById('printModal').classList.add('hidden');
-      setTimeout(() => { document.getElementById('print-preview-content').innerHTML = ''; }, 300);
     }
 
     function downloadPDF() {
       showLoading(true, "Menjana PDF Berkualiti Tinggi...");
-      const element = document.getElementById('print-preview-content');
-      
-      const originalShadow = element.style.boxShadow;
-      element.style.boxShadow = 'none';
+      const element = document.getElementById('borangContainer');
       
       const opt = {
-          margin:       [0.1, 0.1, 0.1, 0.1], 
+          margin:       0, 
           filename:     `Borang_ALD_${window.currentPrintUniqueNo}.pdf`,
           image:        { type: 'jpeg', quality: 0.98 },
-          html2canvas:  { 
-              scale: 2.0, 
-              useCORS: true, 
-              scrollY: 0,
-              backgroundColor: '#ffffff'
-          },
-          jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+          html2canvas:  { scale: 2, useCORS: true },
+          jsPDF:        { unit: 'px', format: [794, 1123], orientation: 'portrait' }
       };
 
       html2pdf().set(opt).from(element).save().then(() => {
-          element.style.boxShadow = originalShadow;
           showLoading(false);
           showToast('PDF berjaya dimuat turun!', 'success');
       }).catch((err) => {
-          element.style.boxShadow = originalShadow;
           showLoading(false);
           showToast('Gagal menjana PDF', 'danger');
       });
