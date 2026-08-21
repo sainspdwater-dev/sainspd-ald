@@ -522,7 +522,8 @@
                 <div id="pf-keterangan" class="form-textarea" style="top: 449.9px; left: 160px;"></div>
                 <div id="pf-alamat" class="form-field" style="top: 565.5px; left: 254.2px;"></div>
                 <div id="pf-kordinat" class="form-field" style="top: 758px; left: 288.4px;"></div>
-
+                <div id="pf-maklumatkerosakan" class="form-field" style="top: 257.2px; left: 437px;"></div>
+              
                 <!-- TICK KEROSAKAN (✔) -->
                 <div id="pt-flowmeter" class="tick-field" style="top: 210.5px; left: 279.1px;"></div>
                 <div id="pt-prv" class="tick-field" style="top: 210.5px; left: 610.7px;"></div>
@@ -1259,6 +1260,7 @@
       document.getElementById('pf-jenisPaip').innerText = item.jenisPaip !== '-' ? item.jenisPaip : '';
       document.getElementById('pf-alamat').innerText = item.alamat !== '-' ? item.alamat : '';
       document.getElementById('pf-kordinat').innerText = item.kordinat !== '-' ? item.kordinat : '';
+      document.getElementById('pf-maklumatkerosakan').innerText = item.maklumatkerosakan !== '-' ? item.maklumatkerosakan : '';
       
       let keteranganStr = (item.maklumatKebocoran !== '-' ? item.maklumatKebocoran : '');
       if (item.saizPaip && item.saizPaip !== '-') {
