@@ -66,9 +66,6 @@
     }
     .tooltip-wrap:hover .tooltip-text { visibility: visible; opacity: 1; }
 
-    /* ==========================================
-       CSS UTAMA UNTUK PENDEKATAN 1 (BORANG BERSIH)
-       ========================================== */
     .a4-container {
         width: 794px; 
         height: 1123px; 
@@ -84,34 +81,9 @@
         color: black;
     }
 
-    .form-field { 
-        position: absolute; 
-        font-size: 11px; 
-        font-weight: bold; 
-        color: black; 
-        border: none; /* Garisan rujukan sementara. Tukar ke 'none' apabila sudah siap adjust. */
-        background: transparent; 
-    }
-    
-    .form-textarea { 
-        position: absolute; 
-        font-size: 11px; 
-        font-weight: bold; 
-        color: black; 
-        width: 450px; 
-        word-wrap: break-word; 
-        white-space: pre-line; 
-        line-height: 1.3;
-        border: none; 
-        background: transparent;
-    }
-    
-    .tick-field { 
-        position: absolute; 
-        font-size: 14px; 
-        font-weight: bold; 
-        color: black; 
-    }
+    .form-field { position: absolute; font-size: 11px; font-weight: bold; color: black; border: none; background: transparent; }
+    .form-textarea { position: absolute; font-size: 11px; font-weight: bold; color: black; width: 450px; word-wrap: break-word; white-space: pre-line; line-height: 1.3; border: none; background: transparent; }
+    .tick-field { position: absolute; font-size: 14px; font-weight: bold; color: black; }
 
     @media print {
         body * { visibility: hidden; }
@@ -119,7 +91,6 @@
         #printModal { position: absolute; left: 0; top: 0; margin: 0; padding: 0; background: white; border: none; box-shadow: none; }
         .modal-header-print { display: none !important; }
         .a4-container { box-shadow: none; margin: 0; border: none; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .form-field, .form-textarea { border: none !important; background: transparent !important; }
     }
   </style>
 </head>
@@ -131,7 +102,7 @@
       <div class="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
       <div>
         <h3 class="font-bold text-slate-900">LOADING...</h3>
-        <p class="text-xs text-slate-500">Akan dibuka</p>
+        <p class="text-xs text-slate-500">Sila tunggu sebentar</p>
       </div>
     </div>
   </div>
@@ -257,31 +228,19 @@
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="glass-card p-5 rounded-2xl">
-          <h4 class="font-bold text-sm text-slate-800 mb-4 flex items-center justify-between">
-            <span>Bilangan Mengikut Bulan</span>
-            <span class="text-xs text-slate-400 font-normal"></span>
-          </h4>
+          <h4 class="font-bold text-sm text-slate-800 mb-4">Bilangan Mengikut Bulan</h4>
           <div class="relative h-64"><canvas id="chartBulan"></canvas></div>
         </div>
         <div class="glass-card p-5 rounded-2xl">
-          <h4 class="font-bold text-sm text-slate-800 mb-4 flex items-center justify-between">
-            <span>Jenis Pengesanan</span>
-            <span class="text-xs text-slate-400 font-normal"></span>
-          </h4>
+          <h4 class="font-bold text-sm text-slate-800 mb-4">Jenis Pengesanan</h4>
           <div class="relative h-64 flex justify-center"><canvas id="chartPengesanan"></canvas></div>
         </div>
         <div class="glass-card p-5 rounded-2xl">
-          <h4 class="font-bold text-sm text-slate-800 mb-4 flex items-center justify-between">
-            <span>Taburan Jenis Paip</span>
-            <span class="text-xs text-slate-400 font-normal"></span>
-          </h4>
+          <h4 class="font-bold text-sm text-slate-800 mb-4">Taburan Jenis Paip</h4>
           <div class="relative h-64"><canvas id="chartPaip"></canvas></div>
         </div>
         <div class="glass-card p-5 rounded-2xl">
-          <h4 class="font-bold text-sm text-slate-800 mb-4 flex items-center justify-between">
-            <span>Dilaporkan Oleh</span>
-            <span class="text-xs text-slate-400 font-normal"></span>
-          </h4>
+          <h4 class="font-bold text-sm text-slate-800 mb-4">Dilaporkan Oleh</h4>
           <div class="relative h-64 flex justify-center"><canvas id="chartLapor"></canvas></div>
         </div>
       </div>
@@ -297,7 +256,7 @@
       </div>
 
       <div class="glass-card p-5 rounded-2xl overflow-hidden">
-        <h4 class="font-bold text-sm text-slate-800 mb-4">Senarai Aduan Terperinci (Kolum B - O)</h4>
+        <h4 class="font-bold text-sm text-slate-800 mb-4">Senarai Aduan Terperinci</h4>
         <div class="overflow-x-auto">
           <table id="dataTableRumusan" class="w-full text-xs text-left text-slate-700 stripe hover">
             <thead class="bg-slate-100 text-slate-700 uppercase font-semibold">
@@ -419,8 +378,7 @@
 
   <!-- MODAL KEMASKINI REKOD -->
   <div id="editModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
-      
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
       <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
         <div>
           <h3 class="font-bold text-slate-800 text-base">Kemaskini Rekod Aduan</h3>
@@ -435,7 +393,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label class="block font-bold text-slate-700 text-xs mb-1.5">Tarikh</label>
-            <input type="text" id="edit-tarikh" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs">
+            <input type="text" id="edit-tarikh" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 text-xs">
           </div>
           <div>
             <label class="block font-bold text-slate-700 text-xs mb-1.5">Unique No</label>
@@ -443,31 +401,31 @@
           </div>
           <div>
             <label class="block font-bold text-slate-700 text-xs mb-1.5">No Aduan</label>
-            <input type="text" id="edit-noAduan" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs">
+            <input type="text" id="edit-noAduan" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 text-xs">
           </div>
           <div>
             <label class="block font-bold text-slate-700 text-xs mb-1.5">DMA / DMZ</label>
-            <input type="text" id="edit-dmaDmz" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs">
+            <input type="text" id="edit-dmaDmz" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 text-xs">
           </div>
           <div class="sm:col-span-2">
             <label class="block font-bold text-slate-700 text-xs mb-1.5">Alamat</label>
-            <textarea id="edit-alamat" rows="2" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs"></textarea>
+            <textarea id="edit-alamat" rows="2" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 text-xs"></textarea>
           </div>
           <div>
             <label class="block font-bold text-slate-700 text-xs mb-1.5">Maklumat Kebocoran / Pecah</label>
-            <input type="text" id="edit-maklumatKebocoran" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs">
+            <input type="text" id="edit-maklumatKebocoran" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 text-xs">
           </div>
           <div>
             <label class="block font-bold text-slate-700 text-xs mb-1.5">Jenis Paip</label>
-            <input type="text" id="edit-jenisPaip" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs">
+            <input type="text" id="edit-jenisPaip" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 text-xs">
           </div>
           <div>
             <label class="block font-bold text-slate-700 text-xs mb-1.5">Saiz Paip</label>
-            <input type="text" id="edit-saizPaip" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs">
+            <input type="text" id="edit-saizPaip" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 text-xs">
           </div>
           <div>
             <label class="block font-bold text-slate-700 text-xs mb-1.5">Dilaporkan Oleh</label>
-            <input type="text" id="edit-dilaporkanOleh" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs">
+            <input type="text" id="edit-dilaporkanOleh" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 text-xs">
           </div>
         </div>
         <div class="hidden">
@@ -480,22 +438,19 @@
 
       <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-end space-x-3">
         <button onclick="closeEditModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-xl transition">Batal</button>
-        <button onclick="confirmUpdate()" class="px-5 py-2 bg-primary hover:bg-blue-700 text-white font-semibold rounded-xl transition shadow-lg shadow-primary/30">Kemaskini</button>
+        <button onclick="confirmUpdate()" class="px-5 py-2 bg-primary hover:bg-blue-700 text-white font-semibold rounded-xl transition shadow-lg">Kemaskini</button>
       </div>
-
     </div>
   </div>
 
-  <!-- PRINT MODAL (PENDEKATAN 1 : BORANG BERSIH) -->
+  <!-- PRINT MODAL -->
   <div id="printModal" class="fixed inset-0 z-[100] bg-slate-900/90 backdrop-blur-sm hidden flex items-center justify-center p-4">
-    <div class="bg-slate-50 rounded-2xl shadow-2xl w-full max-w-5xl max-h-[95vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
-        
-        <!-- Modal Header -->
+    <div class="bg-slate-50 rounded-2xl shadow-2xl w-full max-w-5xl max-h-[95vh] flex flex-col overflow-hidden">
         <div class="modal-header-print p-4 bg-primary text-white flex items-center justify-between shadow-md z-10">
             <h2 class="font-bold text-lg"><i class="fa-solid fa-print mr-2"></i>Preview Borang ALD</h2>
             <div class="flex space-x-3 items-center">
                 <button onclick="window.print()" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-xl transition shadow-lg flex items-center space-x-2">
-                    <i class="fa-solid fa-print"></i><span>Cetak (Print)</span>
+                    <i class="fa-solid fa-print"></i><span>Cetak</span>
                 </button>
                 <button onclick="downloadPDF()" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-xl transition shadow-lg flex items-center space-x-2">
                     <i class="fa-solid fa-download"></i><span>Muat Turun PDF</span>
@@ -506,13 +461,8 @@
             </div>
         </div>
 
-        <!-- Modal Body (Preview Canvas - A4 Container) -->
         <div class="p-6 overflow-y-auto flex-1 flex justify-center bg-gray-200">
-            
-            <!-- KONTENA A4 PENDEKATAN 1 -->
             <div id="borangContainer" class="a4-container">
-                
-                <!-- DATA ASAS (Ubah top & left di sini untuk adjust kedudukan jika perlu) -->
                 <div id="pf-tarikh" class="form-field" style="top: 137.6px; left: 135px;"></div>
                 <div id="pf-noAduan" class="form-field" style="top: 137.6px; left: 493px;"></div>
                 <div id="pf-dma" class="form-textarea" style="top: 161.4px; left: 135.2px; width: 120px; height: 50px;"></div>
@@ -524,7 +474,6 @@
                 <div id="pf-kordinat" class="form-field" style="top: 793.5px; left: 357.4px;"></div>
                 <div id="pf-maklumatKerosakan" class="form-field" style="top: 260.2px; left: 491px;"></div>
               
-                <!-- TICK KEROSAKAN (✔) -->
                 <div id="pt-flowmeter" class="tick-field" style="top: 211.6px; left: 314.7px;"></div>
                 <div id="pt-prv" class="tick-field" style="top: 208.4px; left: 646.3px;"></div>
                 <div id="pt-bocor" class="tick-field" style="top: 234.9px; left: 314.7px;"></div>
@@ -533,24 +482,20 @@
                 <div id="pt-limpahan" class="tick-field" style="top: 281.4px; left: 314.7px;"></div>
                 <div id="pt-meter" class="tick-field" style="top: 304.2px; left: 314.7px;"></div>
 
-                <!-- TICK KEBOCORAN (✔) -->
                 <div id="pt-bulkmeter" class="tick-field" style="top: 338.4px; left: 654px;"></div>
                 <div id="pt-meterstand" class="tick-field" style="top: 379px; left: 487.6px;"></div>
                 <div id="pt-sluice" class="tick-field" style="top: 648.2px; left: 654px;"></div>
                 <div id="pt-airvalve" class="tick-field" style="top: 392px; left: 487.6px;"></div>
                 <div id="pt-hubung" class="tick-field" style="top: 396px; left: 664px;"></div>
                 <div id="pt-utama" class="tick-field" style="top: 413.5px; left: 664px;"></div>
-
             </div>
-
         </div>
-
     </div>
   </div>
 
-  <!-- CUSTOM CONFIRMATION MODAL -->
+  <!-- CONFIRMATION MODAL -->
   <div id="customConfirmModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4" style="z-index: 99999;">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center space-y-4 animate-in fade-in zoom-in duration-200">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center space-y-4">
       <div class="w-12 h-12 rounded-full bg-blue-50 text-primary flex items-center justify-center mx-auto text-xl">
         <i class="fa-solid fa-triangle-exclamation"></i>
       </div>
@@ -560,7 +505,7 @@
       </div>
       <div class="flex space-x-3 pt-2">
         <button onclick="closeCustomConfirm(false)" class="flex-1 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-xs rounded-xl transition">Batal</button>
-        <button onclick="closeCustomConfirm(true)" class="flex-1 py-2 bg-primary hover:bg-blue-700 text-white font-semibold text-xs rounded-xl transition shadow-lg shadow-primary/30">Ya, Teruskan</button>
+        <button onclick="closeCustomConfirm(true)" class="flex-1 py-2 bg-primary hover:bg-blue-700 text-white font-semibold text-xs rounded-xl transition shadow-lg">Ya, Teruskan</button>
       </div>
     </div>
   </div>
@@ -571,33 +516,24 @@
     <span id="toastMessage">Mesej Notifikasi</span>
   </div>
 
-  <!-- JAVASCRIPT LOGIC -->
   <script>
-    // ============================================================
-    // SECURITY: Authentication Check & Session Management
-    // ============================================================
     (function checkAuth() {
         const token = sessionStorage.getItem('pd_water_auth_token');
         if (!token) {
             window.location.replace('./index.html?expired=true');
             return;
         }
-        
         const loginTime = parseInt(sessionStorage.getItem('pd_water_login_time'));
         if (loginTime && (Date.now() - loginTime) > 7200000) {
             sessionStorage.removeItem('pd_water_auth_token');
             sessionStorage.removeItem('pd_water_login_time');
             window.location.replace('./index.html?expired=true');
-            return;
         }
     })();
 
-    // ============================================================
-    // SECURITY: Prevent Back Navigation After Logout
-    // ============================================================
     (function preventBackNavigation() {
         history.pushState(null, null, location.href);
-        window.addEventListener('popstate', function(event) {
+        window.addEventListener('popstate', function() {
             const token = sessionStorage.getItem('pd_water_auth_token');
             if (!token) {
                 window.location.replace('./index.html?expired=true');
@@ -607,9 +543,6 @@
         });
     })();
 
-    // ============================================================
-    // CONFIGURATION
-    // ============================================================
     const CF_WORKER_URL = 'https://ald-gateway.sainspdwater.workers.dev';
     const SESSION_DURATION = 7200000;
 
@@ -622,16 +555,12 @@
     const chartsCache = {};
     let dtRumusan = null;
     let dtKemaskini = null;
-
     let currentDataVersion = "0";
     let pollingInterval = null;
 
     const bulanOrder = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ogo", "Sep", "Okt", "Nov", "Dis"];
     const CHART_COLORS = ['#0056D2', '#2E7DFF', '#2E7D32', '#ED6C02', '#8B5CF6', '#EC4899', '#06B6D4', '#10B981', '#F59E0B', '#3B82F6'];
 
-    // ============================================================
-    // SESSION MANAGEMENT
-    // ============================================================
     function checkSessionExpiry() {
         const loginTime = parseInt(sessionStorage.getItem('pd_water_login_time'));
         if (loginTime && (Date.now() - loginTime) > SESSION_DURATION) {
@@ -655,34 +584,21 @@
         return fetch(url, options);
     }
 
-    // ============================================================
-    // LOGOUT FUNCTION
-    // ============================================================
     function logout() {
         sessionStorage.removeItem('pd_water_auth_token');
         sessionStorage.removeItem('pd_water_login_time');
-        
         if (pollingInterval) {
             clearInterval(pollingInterval);
             pollingInterval = null;
         }
-        
-        globalData = [];
-        filteredData = [];
         window.location.replace('./index.html');
     }
 
-    // ============================================================
-    // INITIALIZATION
-    // ============================================================
     $(document).ready(function() {
       initEmptyComponents();
       loadData();
     });
 
-    // ============================================================
-    // DATA LOADING FUNCTIONS
-    // ============================================================
     async function loadData() {
       showLoading(true);
       try {
@@ -701,7 +617,7 @@
         if (error.message === 'Session expired') {
           window.location.replace('./index.html?expired=true');
         } else {
-          showToast('Gagal memuatkan data: ' + error.message, 'danger');
+          showToast('Gagal memuatkan data.', 'danger');
         }
       }
     }
@@ -747,27 +663,22 @@
       }, 10000);
     }
 
-    // ============================================================
-    // DATA HANDLING FUNCTIONS
-    // ============================================================
     function parseCoordinates(str) {
       if (str === null || str === undefined) return { coords: null };
       const trimmed = String(str).trim();
-      const invalidValues = ['-', 'tiada', 'n/a', '#n/a', 'kosong', '""', ''];
-      if (invalidValues.includes(trimmed.toLowerCase())) return { coords: null };
+      if (['-', 'tiada', 'n/a', ''].includes(trimmed.toLowerCase())) return { coords: null };
       if (!trimmed.includes(',')) return { coords: null };
       const parts = trimmed.split(',');
-      if (parts.length < 2) return { coords: null };
       const lat = parseFloat(parts[0].trim());
       const lng = parseFloat(parts[1].trim());
-      if (isNaN(lat) || isNaN(lng) || (lat === 0 && lng === 0) || lat < -90 || lat > 90 || lng < -180 || lng > 180) return { coords: null };
+      if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) return { coords: null };
       return { coords: [lat, lng] };
     }
 
     function handleDataLoaded(response, isSoftRefresh = false) {
       if (!response.success) {
         if (!isSoftRefresh) showLoading(false);
-        showToast('Ralat: ' + response.message, 'danger');
+        showToast('Ralat memuatkan data.', 'danger');
         return;
       }
 
@@ -779,8 +690,7 @@
       globalData = [];
       for (let i = 0; i < rawData.length; i++) {
         const r = rawData[i];
-        const uniqueNo = r[13];
-        if (uniqueNo) {
+        if (r[13]) {
           globalData.push({
             tarikh: r[0] || '-', noAduan: r[1] || '-', dmaDmz: r[2] || '-', alamat: r[3] || '-',
             kordinat: r[4] || '', maklumatKerosakan: r[5] || '-', maklumatKebocoran: r[6] || '-',
@@ -807,7 +717,7 @@
         document.getElementById('filter-pengesanan').value = fPengesanan;
 
         applyFilters();
-        showToast('Data Berjaya Dikemaskini...', 'success');
+        showToast('Data Berjaya Dikemaskini', 'success');
       } else {
         populateFilters();
         applyFilters();
@@ -818,9 +728,6 @@
       setTimeout(() => { if (mapInstance) mapInstance.invalidateSize(); }, 200);
     }
 
-    // ============================================================
-    // UI FUNCTIONS
-    // ============================================================
     function initEmptyComponents() {
       chartsCache['chartBulan'] = createChartInstance('chartBulan', 'bar', false);
       chartsCache['chartPengesanan'] = createChartInstance('chartPengesanan', 'pie', false);
@@ -859,34 +766,13 @@
             data: null,
             className: 'text-center space-x-2',
             render: function (data, type, row) {
-              const editBtn = `
-                <div class="tooltip-wrap">
-                  <button onclick="openEditModal('${escapeHtml(row.uniqueNo)}')" class="p-2.5 bg-blue-50 text-primary hover:bg-blue-100 rounded-xl transition shadow-sm hover:scale-105">
-                    <i class="fa-solid fa-pencil text-sm"></i>
-                  </button>
-                  <span class="tooltip-text">Edit Rekod</span>
-                </div>`;
-              
+              const editBtn = `<div class="tooltip-wrap"><button onclick="openEditModal('${escapeHtml(row.uniqueNo)}')" class="p-2.5 bg-blue-50 text-primary hover:bg-blue-100 rounded-xl transition shadow-sm"><i class="fa-solid fa-pencil text-sm"></i></button><span class="tooltip-text">Edit</span></div>`;
               let mapBtn = '';
               const parsed = parseCoordinates(row.kordinat);
               if (parsed.coords) {
-                mapBtn = `
-                  <div class="tooltip-wrap ml-1">
-                    <a href="https://www.google.com/maps?q=${parsed.coords[0]},${parsed.coords[1]}" target="_blank" class="p-2.5 bg-emerald-50 text-success hover:bg-emerald-100 rounded-xl transition shadow-sm hover:scale-105 inline-block">
-                      <i class="fa-solid fa-location-dot text-sm"></i>
-                    </a>
-                    <span class="tooltip-text">Buka Peta</span>
-                  </div>`;
+                mapBtn = `<div class="tooltip-wrap ml-1"><a href="https://www.google.com/maps?q=${parsed.coords[0]},${parsed.coords[1]}" target="_blank" class="p-2.5 bg-emerald-50 text-success hover:bg-emerald-100 rounded-xl transition shadow-sm inline-block"><i class="fa-solid fa-location-dot text-sm"></i></a><span class="tooltip-text">Peta</span></div>`;
               }
-
-              const printBtn = `
-                <div class="tooltip-wrap ml-1">
-                  <button onclick="executePrint('${escapeHtml(row.uniqueNo)}')" class="p-2.5 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-xl transition shadow-sm hover:scale-105 inline-block">
-                    <i class="fa-solid fa-print text-sm"></i>
-                  </button>
-                  <span class="tooltip-text">Cetak Borang</span>
-                </div>`;
-
+              const printBtn = `<div class="tooltip-wrap ml-1"><button onclick="executePrint('${escapeHtml(row.uniqueNo)}')" class="p-2.5 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-xl transition shadow-sm inline-block"><i class="fa-solid fa-print text-sm"></i></button><span class="tooltip-text">Cetak</span></div>`;
               return editBtn + mapBtn + printBtn;
             }
           }
@@ -907,16 +793,13 @@
       const badge = document.getElementById('lockBadge');
       if (isLockEdit === 'YA') {
         badge.className = 'px-3 py-1 rounded-full text-xs font-semibold bg-red-900/50 text-red-300 border border-red-700';
-        badge.innerHTML = '<i class="fa-solid fa-lock mr-1"></i> Status Kunci: YA (Edit Terhad)';
+        badge.innerHTML = '<i class="fa-solid fa-lock mr-1"></i> Status Kunci: YA';
       } else {
         badge.className = 'px-3 py-1 rounded-full text-xs font-semibold bg-emerald-900/50 text-emerald-300 border border-emerald-700';
         badge.innerHTML = '<i class="fa-solid fa-lock-open mr-1"></i> Status Kunci: BEBAS';
       }
     }
 
-    // ============================================================
-    // FILTER FUNCTIONS
-    // ============================================================
     let searchTimeout = null;
     function debouncedSearch() {
       clearTimeout(searchTimeout);
@@ -1041,9 +924,6 @@
       }
     }
 
-    // ============================================================
-    // RENDER FUNCTIONS
-    // ============================================================
     function renderDashboard() {
       updateKPIs();
       updateCharts();
@@ -1150,9 +1030,6 @@
       if (dtRumusan) dtRumusan.clear().rows.add(filteredData).draw(false);
     }
 
-    // ============================================================
-    // EDIT FUNCTIONS
-    // ============================================================
     function openEditModal(uniqueNo) {
       const item = globalData.find(d => d.uniqueNo === uniqueNo);
       if (!item) return showToast('Rekod tidak dijumpai.', 'danger');
@@ -1237,22 +1114,18 @@
         if (err.message === 'Session expired') {
           window.location.replace('./index.html?expired=true');
         } else {
-          showToast('Kemaskini gagal: ' + err.message, 'danger');
+          showToast('Kemaskini gagal.', 'danger');
         }
       }
     }
 
-    // ============================================================
-    // PRINT FUNCTION (PENDEKATAN 1 : CSS OVERLAY DI ATAS BORANG BERSIH)
-    // ============================================================
     async function executePrint(uniqueNo) {
       const uNo = uniqueNo || document.getElementById('edit-uniqueNo').value;
-      if (!uNo) return showToast('Sila pilih atau buka rekod untuk dicetak.', 'danger');
+      if (!uNo) return showToast('Sila pilih rekod untuk dicetak.', 'danger');
 
       const item = globalData.find(d => d.uniqueNo === uNo);
       if (!item) return showToast('Rekod tidak dijumpai.', 'danger');
 
-      // 1. Masukkan Teks Asas ke Kotak Overlay
       document.getElementById('pf-tarikh').innerText = item.tarikh !== '-' ? item.tarikh : '';
       document.getElementById('pf-noAduan').innerText = item.noAduan !== '-' ? item.noAduan : '';
       document.getElementById('pf-dma').innerText = item.dmaDmz !== '-' ? item.dmaDmz : '';
@@ -1268,12 +1141,11 @@
       }
       document.getElementById('pf-keterangan').innerText = keteranganStr;
 
-      // 2. Analisis Logik Kerosakan (Tanda ✔ automatik)
       const kerosakan = String(item.maklumatKerosakan || '').toUpperCase();
       const bocor = String(item.maklumatKebocoran || '').toUpperCase();
 
       document.getElementById('pt-flowmeter').innerText = kerosakan.includes('FLOWMETER') ? '✔' : '';
-      document.getElementById('pt-prv').innerText = (kerosakan.includes('PRV') || kerosakan.includes('PRESSURE') || kerosakan.includes('REDUCING')) ? '✔' : '';
+      document.getElementById('pt-prv').innerText = (kerosakan.includes('PRV') || kerosakan.includes('PRESSURE')) ? '✔' : '';
       document.getElementById('pt-bocor').innerText = (kerosakan.includes('BOCOR') || kerosakan.includes('PECAH')) ? '✔' : '';
       document.getElementById('pt-altitude').innerText = kerosakan.includes('ALTITUDE') ? '✔' : '';
       document.getElementById('pt-haram').innerText = kerosakan.includes('HARAM') ? '✔' : '';
@@ -1283,13 +1155,11 @@
       document.getElementById('pt-bulkmeter').innerText = bocor.includes('BULK') ? '✔' : '';
       document.getElementById('pt-meterstand').innerText = bocor.includes('STAND') ? '✔' : '';
       document.getElementById('pt-sluice').innerText = bocor.includes('SLUICE') ? '✔' : '';
-      document.getElementById('pt-airvalve').innerText = (bocor.includes('AIR VALVE') || bocor.includes('INJAP') || bocor.includes('ANGIN')) ? '✔' : '';
-      document.getElementById('pt-hubung').innerText = (bocor.includes('HUBUNGAN') || bocor.includes('PERHUBUNGAN')) ? '✔' : '';
-      document.getElementById('pt-utama').innerText = (bocor.includes('UTAMA') || bocor.includes('PECAH') || bocor.includes('BOCOR')) ? '✔' : '';
+      document.getElementById('pt-airvalve').innerText = (bocor.includes('AIR VALVE') || bocor.includes('INJAP')) ? '✔' : '';
+      document.getElementById('pt-hubung').innerText = bocor.includes('HUBUNGAN') ? '✔' : '';
+      document.getElementById('pt-utama').innerText = (bocor.includes('UTAMA') || bocor.includes('PECAH')) ? '✔' : '';
 
       window.currentPrintUniqueNo = uNo;
-
-      // Buka Modal Print Preview
       document.getElementById('printModal').classList.remove('hidden');
     }
 
@@ -1300,27 +1170,23 @@
     function downloadPDF() {
       showLoading(true, "Menjana PDF Berkualiti Tinggi...");
       const element = document.getElementById('borangContainer');
-      
       const opt = {
-          margin:       0, 
-          filename:     `Borang_ALD_${window.currentPrintUniqueNo}.pdf`,
-          image:        { type: 'jpeg', quality: 1.0 },
-          html2canvas:  { scale: 3, useCORS: true },
-          jsPDF:        { unit: 'px', format: [794, 1123], orientation: 'portrait' }
+          margin: 0, 
+          filename: `Borang_ALD_${window.currentPrintUniqueNo}.pdf`,
+          image: { type: 'jpeg', quality: 1.0 },
+          html2canvas: { scale: 3, useCORS: true },
+          jsPDF: { unit: 'px', format: [794, 1123], orientation: 'portrait' }
       };
 
       html2pdf().set(opt).from(element).save().then(() => {
           showLoading(false);
           showToast('PDF berjaya dimuat turun!', 'success');
-      }).catch((err) => {
+      }).catch(() => {
           showLoading(false);
           showToast('Gagal menjana PDF', 'danger');
       });
     }
 
-    // ============================================================
-    // NAVIGATION & UTILITY FUNCTIONS
-    // ============================================================
     function switchTab(tabName) {
       document.querySelectorAll('header nav button:not(#nav-logout)').forEach(btn => {
         btn.classList.remove('active', 'bg-primary', 'text-white');
