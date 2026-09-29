@@ -81,7 +81,7 @@
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <i class="ph ph-user text-gray-500 text-lg"></i>
                         </div>
-                        <input type="text" id="username" name="username" required class="block w-full pl-10 pr-3 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all sm:text-sm" placeholder="Masukkan ID Pengguna">
+                        <input type="text" id="username" name="username" autocomplete="off" required class="block w-full pl-10 pr-3 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all sm:text-sm" placeholder="Masukkan ID Pengguna">
                     </div>
                 </div>
 
@@ -91,7 +91,7 @@
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <i class="ph ph-lock-key text-gray-500 text-lg"></i>
                         </div>
-                        <input type="password" id="password" name="password" required class="block w-full pl-10 pr-10 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all sm:text-sm" placeholder="••••••••">
+                        <input type="password" id="password" name="password" autocomplete="new-password" required class="block w-full pl-10 pr-10 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all sm:text-sm" placeholder="••••••••">
                         <button type="button" id="toggle-password" tabindex="-1" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-300 focus:outline-none transition-colors">
                             <i class="ph ph-eye text-lg" id="eye-icon"></i>
                         </button>
@@ -197,6 +197,13 @@
                 this.passwordInput.setAttribute('type', 'password');
                 this.eyeIcon.className = 'ph ph-eye text-lg';
                 this.hideError();
+                
+                // Pastikan nilai kosong walaupun pelayar web cuba mengisi data secara automatik
+                setTimeout(() => {
+                    if (this.usernameInput) this.usernameInput.value = '';
+                    if (this.passwordInput) this.passwordInput.value = '';
+                }, 50);
+
                 const url = new URL(window.location);
                 url.searchParams.delete('expired');
                 window.history.replaceState({}, document.title, url.toString());
